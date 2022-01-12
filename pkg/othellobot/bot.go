@@ -19,16 +19,15 @@ func New(token string) *Bot {
 }
 
 func (bot *Bot) Run() {
-	botapi, err := tgbotapi.NewBotAPI(bot.token)
+	var err error
+	bot.api, err = tgbotapi.NewBotAPI(bot.token)
 	if err != nil {
 		log.Panic(err)
 	}
 
-	bot.api = botapi
-
 	updateConfig := tgbotapi.NewUpdate(0)
 	updateConfig.Timeout = 60
-	updates := botapi.GetUpdatesChan(updateConfig)
+	updates := bot.api.GetUpdatesChan(updateConfig)
 	for update := range updates {
 		go bot.handleUpdate(update)
 	}
@@ -49,7 +48,7 @@ func (bot *Bot) handleMessage(update tgbotapi.Update) {
 	}
 	switch update.Message.Text {
 	case NEW_GAME_BUTTON_TEXT:
-		bot.startNewGame(update)
+		bot.askGameMode(update)
 	case SCOREBOARD_BUTTON_TEXT:
 		bot.showScoreboard(update)
 	case PROFILE_BUTTON_TEXT:
@@ -75,9 +74,9 @@ func (bot *Bot) handleCommand(update tgbotapi.Update) {
 	}
 }
 
-func (bot *Bot) startNewGame(update tgbotapi.Update) {
+func (bot *Bot) askGameMode(update tgbotapi.Update) {
 	msgText := "You can play Othello with opponents around the world,\n" +
-		"or play with your friends in chats or groups!"
+		"or play with your friends in chats!"
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, msgText)
 	msg.ReplyMarkup = buildGameModeKeyboard()
 	bot.api.Send(msg)
@@ -99,5 +98,8 @@ func (bot *Bot) showHelp(update tgbotapi.Update) {
 }
 
 func (bot *Bot) handleCallbackQuery(update tgbotapi.Update) {
-
+	if update.CallbackQuery.Data == "playWithRandomOpponent" {
+		// TODO: implement
+		bot.api.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "Not implemented yet!"))
+	}
 }
