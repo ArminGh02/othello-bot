@@ -16,3 +16,14 @@ func buildMainKeyboard() tgbotapi.ReplyKeyboardMarkup {
 		),
 	)
 }
+
+func buildGameModeKeyboard() tgbotapi.InlineKeyboardMarkup {
+	return tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Play with friends!", "friends"),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Play with random opponents!", "randomOpponent"),
+		),
+	)
+}

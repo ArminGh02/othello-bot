@@ -45,6 +45,17 @@ func (bot *Bot) handleUpdate(update tgbotapi.Update) {
 func (bot *Bot) handleMessage(update tgbotapi.Update) {
 	if update.Message.IsCommand() {
 		bot.handleCommand(update)
+		return
+	}
+	switch update.Message.Text {
+	case NEW_GAME_BUTTON_TEXT:
+		bot.startNewGame(update)
+	case SCOREBOARD_BUTTON_TEXT:
+		bot.showScoreboard(update)
+	case PROFILE_BUTTON_TEXT:
+		bot.showProfile(update)
+	case HELP_BUTTON_TEXT:
+		bot.showHelp(update)
 	}
 }
 
@@ -62,6 +73,29 @@ func (bot *Bot) handleCommand(update tgbotapi.Update) {
 		msgText := fmt.Sprintf("Sorry! %s is not recognized as a command.", command)
 		bot.api.Send(tgbotapi.NewMessage(update.Message.Chat.ID, msgText))
 	}
+}
+
+func (bot *Bot) startNewGame(update tgbotapi.Update) {
+	msgText := "You can play Othello with opponents around the world,\n" +
+		"or play with your friends in chats or groups!"
+	msg := tgbotapi.NewMessage(update.Message.Chat.ID, msgText)
+	msg.ReplyMarkup = buildGameModeKeyboard()
+	bot.api.Send(msg)
+}
+
+func (bot *Bot) showScoreboard(update tgbotapi.Update) {
+	// TODO: implement
+	bot.api.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "Not implemented yet!"))
+}
+
+func (bot *Bot) showProfile(update tgbotapi.Update) {
+	// TODO: implement
+	bot.api.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "Not implemented yet!"))
+}
+
+func (bot *Bot) showHelp(update tgbotapi.Update) {
+	// TODO: implement
+	bot.api.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "Not implemented yet!"))
 }
 
 func (bot *Bot) handleCallbackQuery(update tgbotapi.Update) {
