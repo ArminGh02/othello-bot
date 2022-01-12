@@ -8,9 +8,8 @@ import (
 )
 
 type Bot struct {
-	token     string
-	api       *tgbotapi.BotAPI
-	isStarted bool
+	token string
+	api   *tgbotapi.BotAPI
 }
 
 func New(token string) *Bot {
@@ -52,11 +51,13 @@ func (bot *Bot) handleMessage(update tgbotapi.Update) {
 func (bot *Bot) handleCommand(update tgbotapi.Update) {
 	switch update.Message.Command() {
 	case "start":
-		msg := fmt.Sprintf("Hi %s!\n"+
+		msgText := fmt.Sprintf("Hi %s!\n"+
 			"I am Othello Bot.\n"+
 			"Have fun playing Othello strategic board game,\n"+
 			"with your friends or opponents around the world!", update.SentFrom().FirstName)
-		bot.api.Send(tgbotapi.NewMessage(update.Message.Chat.ID, msg))
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, msgText)
+		msg.ReplyMarkup = buildMainKeyboard()
+		bot.api.Send(msg)
 	}
 }
 
