@@ -20,10 +20,10 @@ func buildMainKeyboard() tgbotapi.ReplyKeyboardMarkup {
 func buildGameModeKeyboard() tgbotapi.InlineKeyboardMarkup {
 	return tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("Play with friends!", "friends"),
+			tgbotapi.NewInlineKeyboardButtonSwitch("Play with friends!", ""),
 		),
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("Play with random opponents!", "randomOpponent"),
+			tgbotapi.NewInlineKeyboardButtonData("Play with random opponents!", "playWithRandomOpponent"),
 		),
 	)
 }
