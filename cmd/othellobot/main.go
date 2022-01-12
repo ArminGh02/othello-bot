@@ -4,13 +4,14 @@ import (
 	"log"
 	"os"
 
-	"github.com/ArminGh02/othello-bot/pkg/bot"
+	"github.com/ArminGh02/othello-bot/pkg/othellobot"
 )
 
 func main() {
-	apiToken := os.Getenv("OTHELLO_TOKEN")
-	if apiToken == "" {
+	token := os.Getenv("OTHELLO_TOKEN")
+	if token == "" {
 		log.Fatalln("OTHELLO_TOKEN environment variable is not set.")
 	}
-	bot.Run(apiToken)
+	bot := othellobot.New(token)
+	bot.Run()
 }
