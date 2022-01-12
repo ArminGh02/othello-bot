@@ -49,7 +49,7 @@ func (bot *Bot) handleMessage(update tgbotapi.Update) {
 }
 
 func (bot *Bot) handleCommand(update tgbotapi.Update) {
-	switch update.Message.Command() {
+	switch command := update.Message.Command(); command {
 	case "start":
 		msgText := fmt.Sprintf("Hi %s!\n"+
 			"I am Othello Bot.\n"+
@@ -58,6 +58,9 @@ func (bot *Bot) handleCommand(update tgbotapi.Update) {
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, msgText)
 		msg.ReplyMarkup = buildMainKeyboard()
 		bot.api.Send(msg)
+	default:
+		msgText := fmt.Sprintf("Sorry! %s is not recognized as a command.", command)
+		bot.api.Send(tgbotapi.NewMessage(update.Message.Chat.ID, msgText))
 	}
 }
 
