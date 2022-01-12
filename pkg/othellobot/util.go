@@ -7,12 +7,12 @@ import (
 func buildMainKeyboard() tgbotapi.ReplyKeyboardMarkup {
 	return tgbotapi.NewReplyKeyboard(
 		tgbotapi.NewKeyboardButtonRow(
-			tgbotapi.NewKeyboardButton("🎮 New Game"),
-			tgbotapi.NewKeyboardButton("🏆 Scoreboard"),
+			tgbotapi.NewKeyboardButton(NEW_GAME_BUTTON_TEXT),
+			tgbotapi.NewKeyboardButton(SCOREBOARD_BUTTON_TEXT),
 		),
 		tgbotapi.NewKeyboardButtonRow(
-			tgbotapi.NewKeyboardButton("👤 Profile"),
-			tgbotapi.NewKeyboardButton("❓ Help"),
+			tgbotapi.NewKeyboardButton(PROFILE_BUTTON_TEXT),
+			tgbotapi.NewKeyboardButton(HELP_BUTTON_TEXT),
 		),
 	)
 }
