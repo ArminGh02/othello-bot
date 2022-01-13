@@ -23,6 +23,7 @@ go.work
 
 ### VisualStudioCode ###
 .vscode
+.VSCodeCounter
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
