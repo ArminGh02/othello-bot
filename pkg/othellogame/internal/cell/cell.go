@@ -5,7 +5,7 @@ import "fmt"
 type Cell rune
 
 const (
-	EMPTY = Cell(' ')
+	EMPTY = Cell(0)
 	BLACK = Cell('b')
 	WHITE = Cell('w')
 )

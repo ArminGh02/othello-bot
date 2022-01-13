@@ -18,12 +18,6 @@ func New(user1, user2 *tgbotapi.User) *Game {
 		turn:  turn.Random(),
 	}
 
-	for i := range g.board {
-		for j := range g.board[i] {
-			g.board[i][j] = cell.EMPTY
-		}
-	}
-
 	mid := len(g.board)/2 - 1
 	g.board[mid][mid] = cell.WHITE
 	g.board[mid][mid+1] = cell.BLACK
