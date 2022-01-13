@@ -1,5 +1,7 @@
 package cell
 
+import "fmt"
+
 type Cell rune
 
 const (
@@ -17,6 +19,6 @@ func (c Cell) Emoji() string {
 	case WHITE:
 		return "⚪️"
 	default:
-		return ""
+		panic(fmt.Sprintf("Invalid receiver for Cell.Emoji: %v", c))
 	}
 }
