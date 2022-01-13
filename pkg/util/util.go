@@ -29,3 +29,7 @@ func (set *CoordSet) Contains(c Coord) bool {
 	_, present := set.m[c]
 	return present
 }
+
+func (set *CoordSet) IsEmpty() bool {
+	return len(set.m) == 0
+}
