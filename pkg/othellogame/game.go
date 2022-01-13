@@ -1,8 +1,8 @@
 package othellogame
 
 import (
-	"github.com/ArminGh02/othello-bot/pkg/othellogame/cell"
-	"github.com/ArminGh02/othello-bot/pkg/othellogame/turn"
+	"github.com/ArminGh02/othello-bot/pkg/othellogame/internal/cell"
+	"github.com/ArminGh02/othello-bot/pkg/othellogame/internal/turn"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
