@@ -5,7 +5,7 @@ import "fmt"
 type Cell rune
 
 const (
-	EMPTY = Cell('•')
+	EMPTY = Cell(' ')
 	BLACK = Cell('b')
 	WHITE = Cell('w')
 )
@@ -13,7 +13,7 @@ const (
 func (c Cell) Emoji() string {
 	switch c {
 	case EMPTY:
-		return "•"
+		return " "
 	case BLACK:
 		return "⚫️"
 	case WHITE:
