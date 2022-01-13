@@ -5,6 +5,13 @@ type Coord struct {
 	Y int
 }
 
+func NewCoord(x, y int) Coord {
+	return Coord{
+		X: x,
+		Y: y,
+	}
+}
+
 type CoordSet struct {
 	m map[Coord]struct{}
 }
