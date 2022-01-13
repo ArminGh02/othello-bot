@@ -97,8 +97,7 @@ func (bot *Bot) showProfile(update tgbotapi.Update) {
 }
 
 func (bot *Bot) showHelp(update tgbotapi.Update) {
-	// TODO: implement
-	bot.api.Send(tgbotapi.NewMessage(update.FromChat().ID, "Not implemented yet!"))
+	bot.api.Send(tgbotapi.NewMessage(update.FromChat().ID, HELP_MSG))
 }
 
 func (bot *Bot) handleCallbackQuery(update tgbotapi.Update) {
