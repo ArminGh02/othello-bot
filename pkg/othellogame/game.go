@@ -26,3 +26,7 @@ func New(user1, user2 *tgbotapi.User) *Game {
 
 	return g
 }
+
+func (g *Game) IsTurnOf(user *tgbotapi.User) bool {
+	return g.users[g.turn.Int()] == user
+}
