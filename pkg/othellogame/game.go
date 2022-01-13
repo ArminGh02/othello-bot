@@ -45,6 +45,22 @@ func (g *Game) IsEnded() bool {
 	return g.ended
 }
 
+func (g *Game) InlineKeyboard() tgbotapi.InlineKeyboardMarkup {
+	keyboard := make([][]tgbotapi.InlineKeyboardButton, len(g.board))
+	for i := range keyboard {
+		keyboard[i] = make([]tgbotapi.InlineKeyboardButton, len(g.board[i]))
+		for j, cell := range g.board[i] {
+			keyboard[i][j] = tgbotapi.NewInlineKeyboardButtonData(
+				cell.Emoji(),
+				fmt.Sprintf("%d_%d", j, i),
+			)
+		}
+	}
+	return tgbotapi.InlineKeyboardMarkup{
+		InlineKeyboard: keyboard,
+	}
+}
+
 func (g *Game) PlaceDisk(where util.Coord, user *tgbotapi.User) error {
 	if err := g.checkPlacingDisk(where, user); err != nil {
 		return err
