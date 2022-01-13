@@ -23,7 +23,6 @@ var offset = [direction.COUNT]util.Coord{
 }
 
 type Game struct {
-	// first user's disks are white
 	users           [2]*tgbotapi.User
 	disksCount      [2]int
 	board           [BOARD_SIZE][BOARD_SIZE]cell.Cell
@@ -133,7 +132,19 @@ func (g *Game) checkPlacingDisk(where util.Coord, user *tgbotapi.User) error {
 
 func (g *Game) flipDisks(where util.Coord) {
 	opponent := g.turn.Cell().Reversed()
-	directionsToFlip := make([]direction.Direction, 0, direction.COUNT)
+	directionsToFlip := g.findDirectionsToFlip(where)
+	for _, dir := range directionsToFlip {
+		for x, y := where.X+offset[dir].X, where.Y+offset[dir].Y; g.board[y][x] == opponent; {
+			g.board[y][x] = g.turn.Cell()
+			x += offset[dir].X
+			y += offset[dir].Y
+		}
+	}
+}
+
+func (g *Game) findDirectionsToFlip(where util.Coord) []direction.Direction {
+	opponent := g.turn.Cell().Reversed()
+	res := make([]direction.Direction, 0, direction.COUNT)
 	for i := 0; i < direction.COUNT; i++ {
 		x, y := where.X+offset[i].X, where.Y+offset[i].Y
 		if isValidCoord(x, y, len(g.board)) && g.board[y][x] == opponent {
@@ -145,7 +156,7 @@ func (g *Game) flipDisks(where util.Coord) {
 				}
 				switch g.board[y][x] {
 				case g.turn.Cell():
-					directionsToFlip = append(directionsToFlip, direction.Direction(i))
+					res = append(res, direction.Direction(i))
 					break
 				case cell.EMPTY:
 					break
@@ -153,13 +164,7 @@ func (g *Game) flipDisks(where util.Coord) {
 			}
 		}
 	}
-	for _, dir := range directionsToFlip {
-		for x, y := where.X+offset[dir].X, where.Y+offset[dir].Y; g.board[y][x] == opponent; {
-			g.board[y][x] = g.turn.Cell()
-			x += offset[dir].X
-			y += offset[dir].Y
-		}
-	}
+	return res
 }
 
 func isValidCoord(x, y, length int) bool {
@@ -171,7 +176,18 @@ func (g *Game) passTurn() {
 }
 
 func (g *Game) updatePlaceableCoords() {
+	g.placeableCoords.Clear()
+	for y := range g.board {
+		for x := range g.board[y] {
+			if coord := util.NewCoord(x, y); g.isPlaceableCoord(coord) {
+				g.placeableCoords.Insert(coord)
+			}
+		}
+	}
+}
 
+func (g *Game) isPlaceableCoord(where util.Coord) bool {
+	return len(g.findDirectionsToFlip(where)) > 0
 }
 
 func (g *Game) updateDisksCount() {
