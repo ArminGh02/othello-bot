@@ -37,8 +37,24 @@ func New(user1, user2 *tgbotapi.User) *Game {
 	return g
 }
 
-func (g *Game) ActivePlayer() *tgbotapi.User {
+func (g *Game) ActiveUser() *tgbotapi.User {
 	return g.users[g.turn.Int()]
+}
+
+func (g *Game) WhiteUser() *tgbotapi.User {
+	return g.users[color.WHITE]
+}
+
+func (g *Game) BlackUser() *tgbotapi.User {
+	return g.users[color.BLACK]
+}
+
+func (g *Game) WhiteDisks() int {
+	return g.disksCount[color.WHITE]
+}
+
+func (g *Game) BlackDisks() int {
+	return g.disksCount[color.BLACK]
 }
 
 func (g *Game) IsEnded() bool {
@@ -87,7 +103,7 @@ func (g *Game) PlaceDisk(where util.Coord, user *tgbotapi.User) error {
 }
 
 func (g *Game) isTurnOf(user *tgbotapi.User) bool {
-	return g.ActivePlayer() == user
+	return g.ActiveUser() == user
 }
 
 func (g *Game) checkPlacingDisk(where util.Coord, user *tgbotapi.User) error {
