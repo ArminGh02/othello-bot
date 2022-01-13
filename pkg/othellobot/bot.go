@@ -3,19 +3,24 @@ package othellobot
 import (
 	"fmt"
 	"log"
+	"sync"
 
+	"github.com/ArminGh02/othello-bot/pkg/othellogame"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/google/uuid"
 )
 
 type Bot struct {
-	token string
-	api   *tgbotapi.BotAPI
+	token               string
+	api                 *tgbotapi.BotAPI
+	usersToCurrentGames map[*tgbotapi.User]*othellogame.Game
+	mu                  sync.Mutex
 }
 
 func New(token string) *Bot {
 	return &Bot{
-		token: token,
+		token:               token,
+		usersToCurrentGames: make(map[*tgbotapi.User]*othellogame.Game),
 	}
 }
 
@@ -65,12 +70,13 @@ func (bot *Bot) handleMessage(update tgbotapi.Update) {
 func (bot *Bot) handleCommand(update tgbotapi.Update) {
 	switch command := update.Message.Command(); command {
 	case "start":
-		msgText := fmt.Sprintf("Hi %s!\n"+
-			"I am Othello Bot.\n"+
+		msgText := fmt.Sprintf("Hi %s\\!\n"+
+			"I am *Othello Bot*\\.\n"+
 			"Have fun playing Othello strategic board game,\n"+
-			"with your friends or opponents around the world!", update.SentFrom().FirstName)
+			"with your friends or opponents around the world\\!", update.SentFrom().FirstName)
 		msg := tgbotapi.NewMessage(update.FromChat().ID, msgText)
 		msg.ReplyMarkup = buildMainKeyboard()
+		msg.ParseMode = "MarkdownV2"
 		bot.api.Send(msg)
 	default:
 		msgText := fmt.Sprintf("Sorry! %s is not recognized as a command.", command)
@@ -101,7 +107,7 @@ func (bot *Bot) showHelp(update tgbotapi.Update) {
 }
 
 func (bot *Bot) handleCallbackQuery(update tgbotapi.Update) {
-	switch update.CallbackQuery.Data  {
+	switch update.CallbackQuery.Data {
 	case "playWithRandomOpponent":
 		// TODO: implement
 		bot.api.Send(tgbotapi.NewMessage(update.FromChat().ID, "Not implemented yet!"))
@@ -109,6 +115,7 @@ func (bot *Bot) handleCallbackQuery(update tgbotapi.Update) {
 		// TODO: implement
 		bot.api.Send(tgbotapi.NewMessage(update.FromChat().ID, "Not implemented yet!"))
 	}
+
 	bot.api.Request(tgbotapi.CallbackConfig{
 		CallbackQueryID: update.CallbackQuery.ID,
 	})
