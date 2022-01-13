@@ -2,13 +2,15 @@ package turn
 
 import (
 	"math/rand"
+
+	"github.com/ArminGh02/othello-bot/pkg/othellogame/internal/cell"
 )
 
 type Turn bool
 
 const (
-	PLAYER1 = Turn(false)
-	PLAYER2 = Turn(true)
+	WHITE = Turn(false)
+	BLACK = Turn(true)
 )
 
 func Random() Turn {
@@ -17,7 +19,14 @@ func Random() Turn {
 
 func (t Turn) Int() int {
 	if t {
-		return 0
+		return 1
 	}
-	return 1
+	return 0
+}
+
+func (t Turn) Cell() cell.Cell {
+	if t == BLACK {
+		return cell.BLACK
+	}
+	return cell.WHITE
 }
