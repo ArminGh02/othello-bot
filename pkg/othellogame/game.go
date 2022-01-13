@@ -5,10 +5,22 @@ import (
 
 	"github.com/ArminGh02/othello-bot/pkg/othellogame/internal/cell"
 	"github.com/ArminGh02/othello-bot/pkg/othellogame/internal/color"
+	"github.com/ArminGh02/othello-bot/pkg/othellogame/internal/direction"
 	"github.com/ArminGh02/othello-bot/pkg/othellogame/internal/turn"
 	"github.com/ArminGh02/othello-bot/pkg/util"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
+
+var offset = [direction.COUNT]util.Coord{
+	{X: -1, Y: -1},
+	{X: 0, Y: -1},
+	{X: 1, Y: -1},
+	{X: -1, Y: 0},
+	{X: 1, Y: 0},
+	{X: -1, Y: 1},
+	{X: 0, Y: 1},
+	{X: 1, Y: 1},
+}
 
 type Game struct {
 	// first user's disks are white
@@ -120,7 +132,38 @@ func (g *Game) checkPlacingDisk(where util.Coord, user *tgbotapi.User) error {
 }
 
 func (g *Game) flipDisks(where util.Coord) {
+	opponent := g.turn.Cell().Reversed()
+	directionsToFlip := make([]direction.Direction, 0, direction.COUNT)
+	for i := 0; i < direction.COUNT; i++ {
+		x, y := where.X+offset[i].X, where.Y+offset[i].Y
+		if isValidCoord(x, y, len(g.board)) && g.board[y][x] == opponent {
+			for {
+				x += offset[i].X
+				y += offset[i].Y
+				if !isValidCoord(x, y, len(g.board)) {
+					break
+				}
+				switch g.board[y][x] {
+				case g.turn.Cell():
+					directionsToFlip = append(directionsToFlip, direction.Direction(i))
+					break
+				case cell.EMPTY:
+					break
+				}
+			}
+		}
+	}
+	for _, dir := range directionsToFlip {
+		for x, y := where.X+offset[dir].X, where.Y+offset[dir].Y; g.board[y][x] == opponent; {
+			g.board[y][x] = g.turn.Cell()
+			x += offset[dir].X
+			y += offset[dir].Y
+		}
+	}
+}
 
+func isValidCoord(x, y, length int) bool {
+	return x >= 0 && y >= 0 && x < length && y < length
 }
 
 func (g *Game) passTurn() {
