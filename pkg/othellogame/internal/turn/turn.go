@@ -4,6 +4,7 @@ import (
 	"math/rand"
 
 	"github.com/ArminGh02/othello-bot/pkg/othellogame/internal/cell"
+	"github.com/ArminGh02/othello-bot/pkg/othellogame/internal/color"
 )
 
 type Turn bool
@@ -18,10 +19,10 @@ func Random() Turn {
 }
 
 func (t Turn) Int() int {
-	if t {
-		return 1
+	if t == BLACK {
+		return color.BLACK
 	}
-	return 0
+	return color.WHITE
 }
 
 func (t Turn) Cell() cell.Cell {
