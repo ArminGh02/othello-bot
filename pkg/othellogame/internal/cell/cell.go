@@ -1,6 +1,10 @@
 package cell
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/ArminGh02/othello-bot/pkg/consts"
+)
 
 type Cell rune
 
@@ -15,9 +19,9 @@ func (c Cell) Emoji() string {
 	case EMPTY:
 		return " "
 	case BLACK:
-		return "⚫️"
+		return consts.BLACK_DISK_EMOJI
 	case WHITE:
-		return "⚪️"
+		return consts.WHITE_DISK_EMOJI
 	default:
 		panic(fmt.Sprintf("Invalid receiver for Cell.Emoji: %v", c))
 	}
