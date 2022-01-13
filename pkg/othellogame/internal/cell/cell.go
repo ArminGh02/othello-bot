@@ -22,3 +22,14 @@ func (c Cell) Emoji() string {
 		panic(fmt.Sprintf("Invalid receiver for Cell.Emoji: %v", c))
 	}
 }
+
+func (c Cell) Reversed() Cell {
+	switch c {
+	case BLACK:
+		return WHITE
+	case WHITE:
+		return BLACK
+	default:
+		panic(fmt.Sprintf("Invalid receiver for Cell.Emoji: %v", c))
+	}
+}
