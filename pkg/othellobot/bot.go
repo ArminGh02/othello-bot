@@ -5,6 +5,7 @@ import (
 	"log"
 	"sync"
 
+	"github.com/ArminGh02/othello-bot/pkg/consts"
 	"github.com/ArminGh02/othello-bot/pkg/othellogame"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/google/uuid"
@@ -107,18 +108,46 @@ func (bot *Bot) showHelp(update tgbotapi.Update) {
 }
 
 func (bot *Bot) handleCallbackQuery(update tgbotapi.Update) {
-	switch update.CallbackQuery.Data {
+	query := update.CallbackQuery
+	switch data := query.Data; data {
 	case "playWithRandomOpponent":
 		// TODO: implement
 		bot.api.Send(tgbotapi.NewMessage(update.FromChat().ID, "Not implemented yet!"))
 	case "join":
-		// TODO: implement
-		bot.api.Send(tgbotapi.NewMessage(update.FromChat().ID, "Not implemented yet!"))
+		bot.startNewGame(update)
+	default:
+
 	}
 
 	bot.api.Request(tgbotapi.CallbackConfig{
-		CallbackQueryID: update.CallbackQuery.ID,
+		CallbackQueryID: query.ID,
 	})
+}
+
+func (bot *Bot) startNewGame(update tgbotapi.Update) {
+	query := update.CallbackQuery
+
+	user1 := query.Message.From
+	user2 := query.From
+	game := othellogame.New(user1, user2)
+
+	bot.mu.Lock()
+	bot.usersToCurrentGames[user1] = game
+	bot.usersToCurrentGames[user2] = game
+	bot.mu.Unlock()
+
+	msgText := fmt.Sprintf("%s%s: %d\n%s%s: %d\nDon't count your chickens before they hatch!",
+		consts.WHITE_DISK_EMOJI,
+		game.WhiteUser(),
+		game.WhiteDisks(),
+		consts.BLACK_DISK_EMOJI,
+		game.BlackUser(),
+		game.BlackDisks(),
+	)
+	msg := tgbotapi.NewMessage(update.FromChat().ID, msgText)
+	msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: game.InlineKeyboard()}
+
+	bot.api.Send(msg)
 }
 
 func (bot *Bot) handleInlineQuery(update tgbotapi.Update) {
