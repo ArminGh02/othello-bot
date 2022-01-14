@@ -1,8 +1,22 @@
 package othellobot
 
 import (
+	"fmt"
+
+	"github.com/ArminGh02/othello-bot/pkg/consts"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
+
+func getGameMsg(whiteUser, blackUser *tgbotapi.User, whiteDisks, blackDisks int) string {
+	return fmt.Sprintf("%s%s: %d\n%s%s: %d\nDon't count your chickens before they hatch!",
+		consts.WHITE_DISK_EMOJI,
+		whiteUser,
+		whiteDisks,
+		consts.BLACK_DISK_EMOJI,
+		blackUser,
+		blackDisks,
+	)
+}
 
 func buildMainKeyboard() tgbotapi.ReplyKeyboardMarkup {
 	return tgbotapi.NewReplyKeyboard(
