@@ -10,10 +10,10 @@ import (
 func getGameMsg(whiteUser, blackUser *tgbotapi.User, whiteDisks, blackDisks int) string {
 	return fmt.Sprintf("%s%s: %d\n%s%s: %d\nDon't count your chickens before they hatch!",
 		consts.WHITE_DISK_EMOJI,
-		whiteUser,
+		whiteUser.FirstName,
 		whiteDisks,
 		consts.BLACK_DISK_EMOJI,
-		blackUser,
+		blackUser.FirstName,
 		blackDisks,
 	)
 }
