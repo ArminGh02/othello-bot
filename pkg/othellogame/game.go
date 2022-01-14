@@ -149,9 +149,11 @@ func (g *Game) findDirectionsToFlip(where util.Coord) []direction.Direction {
 			for {
 				x += offset[i].X
 				y += offset[i].Y
+
 				if !isValidCoord(x, y, len(g.board)) {
 					break
 				}
+
 				switch g.board[y][x] {
 				case g.turn.Cell():
 					res = append(res, direction.Direction(i))
