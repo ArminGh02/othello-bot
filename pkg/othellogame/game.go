@@ -84,7 +84,7 @@ func (g *Game) IsEnded() bool {
 
 func (g *Game) InlineKeyboard() [][]tgbotapi.InlineKeyboardButton {
 	keyboard := make([][]tgbotapi.InlineKeyboardButton, len(g.board))
-	for y := range keyboard {
+	for y := range g.board {
 		keyboard[y] = make([]tgbotapi.InlineKeyboardButton, len(g.board[y]))
 		for x, cell := range g.board[y] {
 			keyboard[y][x] = tgbotapi.NewInlineKeyboardButtonData(
