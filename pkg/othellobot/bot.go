@@ -19,7 +19,7 @@ type Bot struct {
 	inlineMessageIDsToUsersMutex sync.Mutex
 	usersToCurrentGames          map[tgbotapi.User]*othellogame.Game
 	usersToCurrentGamesMutex     sync.Mutex
-	playerInQueue                chan *tgbotapi.User
+	waitingPlayer                chan *tgbotapi.User
 }
 
 func New(token string) *Bot {
@@ -27,7 +27,7 @@ func New(token string) *Bot {
 		token:                   token,
 		usersToCurrentGames:     make(map[tgbotapi.User]*othellogame.Game),
 		inlineMessageIDsToUsers: make(map[string]*tgbotapi.User),
-		playerInQueue:           make(chan *tgbotapi.User, 1),
+		waitingPlayer:           make(chan *tgbotapi.User, 1),
 	}
 }
 
@@ -192,12 +192,12 @@ func (bot *Bot) startNewGameWithFriend(update tgbotapi.Update) {
 }
 
 func (bot *Bot) playWithRandomOpponent(update tgbotapi.Update) {
-	if len(bot.playerInQueue) == 0 {
-		bot.playerInQueue <- update.SentFrom()
+	if len(bot.waitingPlayer) == 0 {
+		bot.waitingPlayer <- update.SentFrom()
 		return
 	}
 
-	user1 := <-bot.playerInQueue
+	user1 := <-bot.waitingPlayer
 	user2 := update.SentFrom()
 
 	game := othellogame.New(user1, user2)
