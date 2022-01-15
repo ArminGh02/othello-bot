@@ -52,6 +52,10 @@ func (g *Game) String() string {
 	return fmt.Sprintf("Game between %s and %s", g.users[0], g.users[1])
 }
 
+func (g *Game) ActiveColor() string {
+	return g.turn.Cell().Emoji()
+}
+
 func (g *Game) ActiveUser() *tgbotapi.User {
 	return g.users[g.turn.Int()]
 }
