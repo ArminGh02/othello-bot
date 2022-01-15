@@ -188,8 +188,8 @@ func (g *Game) updatePlaceableCoords() {
 	g.placeableCoords.Clear()
 	for y := range g.board {
 		for x := range g.board[y] {
-			if coord := coord.New(x, y); g.isPlaceableCoord(coord) {
-				g.placeableCoords.Insert(coord)
+			if c := coord.New(x, y); g.isPlaceableCoord(c) {
+				g.placeableCoords.Insert(c)
 			}
 		}
 	}
