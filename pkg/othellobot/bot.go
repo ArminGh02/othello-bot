@@ -19,6 +19,7 @@ type Bot struct {
 	inlineMessageIDsToUsersMutex sync.Mutex
 	usersToCurrentGames          map[tgbotapi.User]*othellogame.Game
 	usersToCurrentGamesMutex     sync.Mutex
+	playerInQueue                chan *tgbotapi.User
 }
 
 func New(token string) *Bot {
@@ -26,6 +27,7 @@ func New(token string) *Bot {
 		token:                   token,
 		usersToCurrentGames:     make(map[tgbotapi.User]*othellogame.Game),
 		inlineMessageIDsToUsers: make(map[string]*tgbotapi.User),
+		playerInQueue:           make(chan *tgbotapi.User, 1),
 	}
 }
 
@@ -121,32 +123,13 @@ func (bot *Bot) handleCallbackQuery(update tgbotapi.Update) {
 	data := query.Data
 
 	if match, _ := regexp.MatchString("^\\d+_\\d+$", data); match {
-		user := query.From
-
-		bot.usersToCurrentGamesMutex.Lock()
-		game, ok := bot.usersToCurrentGames[*user]
-		if !ok {
-			log.Panicf("Invalid state: usersToCurrentGames does not contain %v\n", user)
-		}
-		err := bot.placeDisk(data, game, user)
-		bot.usersToCurrentGamesMutex.Unlock()
-
-		if err != nil {
-			bot.api.Request(tgbotapi.NewCallback(query.ID, err.Error()))
-		} else if game.IsEnded() {
-			// TODO
-			bot.api.Request(tgbotapi.NewCallback(query.ID, "Game is over!"))
-		} else {
-			bot.api.Send(getEditedMsgOfGame(query.InlineMessageID, game))
-			bot.api.Request(tgbotapi.NewCallback(query.ID, "Disk placed!"))
-		}
+		bot.placeDisk(query)
 		return
 	}
 
 	switch data {
 	case "playWithRandomOpponent":
-		// TODO: implement
-		bot.api.Send(tgbotapi.NewMessage(update.FromChat().ID, "Not implemented yet!"))
+		bot.playWithRandomOpponent(update)
 	case "join":
 		bot.startNewGame(update)
 	}
@@ -154,6 +137,34 @@ func (bot *Bot) handleCallbackQuery(update tgbotapi.Update) {
 	bot.api.Request(tgbotapi.CallbackConfig{
 		CallbackQueryID: query.ID,
 	})
+}
+
+func (bot *Bot) placeDisk(query *tgbotapi.CallbackQuery) {
+	user := query.From
+
+	bot.usersToCurrentGamesMutex.Lock()
+
+	game, ok := bot.usersToCurrentGames[*user]
+	if !ok {
+		log.Panicf("Invalid state: usersToCurrentGames does not contain %v\n", user)
+	}
+
+	var where coord.Coord
+	fmt.Sscanf(query.Data, "%d_%d", &where.X, &where.Y)
+
+	err := game.PlaceDisk(where, user)
+
+	bot.usersToCurrentGamesMutex.Unlock()
+
+	if err != nil {
+		bot.api.Request(tgbotapi.NewCallback(query.ID, err.Error()))
+	} else if game.IsEnded() {
+		// TODO
+		bot.api.Request(tgbotapi.NewCallback(query.ID, "Game is over!"))
+	} else {
+		bot.api.Send(getEditedMsgOfGame(query.InlineMessageID, game))
+		bot.api.Request(tgbotapi.NewCallback(query.ID, "Disk placed!"))
+	}
 }
 
 func (bot *Bot) startNewGame(update tgbotapi.Update) {
@@ -180,10 +191,28 @@ func (bot *Bot) startNewGame(update tgbotapi.Update) {
 	bot.api.Send(getEditedMsgOfGame(query.InlineMessageID, game))
 }
 
-func (bot *Bot) placeDisk(callbackQueryData string, game *othellogame.Game, user *tgbotapi.User) error {
-	var where coord.Coord
-	fmt.Sscanf(callbackQueryData, "%d_%d", &where.X, &where.Y)
-	return game.PlaceDisk(where, user)
+func (bot *Bot) playWithRandomOpponent(update tgbotapi.Update) {
+	if len(bot.playerInQueue) == 0 {
+		bot.playerInQueue <- update.SentFrom()
+		return
+	}
+
+	user1 := <-bot.playerInQueue
+	user2 := update.SentFrom()
+
+	game := othellogame.New(user1, user2)
+
+	log.Printf("Started %s\n", game)
+
+	bot.usersToCurrentGamesMutex.Lock()
+	bot.usersToCurrentGames[*user1] = game
+	bot.usersToCurrentGames[*user2] = game
+	bot.usersToCurrentGamesMutex.Unlock()
+
+	msg := tgbotapi.NewMessage(update.FromChat().ID, getGameMsg(game))
+	msg.ReplyMarkup = &tgbotapi.InlineKeyboardMarkup{InlineKeyboard: game.InlineKeyboard()}
+
+	bot.api.Send(msg)
 }
 
 func (bot *Bot) handleInlineQuery(inlineQuery *tgbotapi.InlineQuery) {
