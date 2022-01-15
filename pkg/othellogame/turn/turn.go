@@ -3,8 +3,8 @@ package turn
 import (
 	"math/rand"
 
-	"github.com/ArminGh02/othello-bot/pkg/othellogame/internal/cell"
-	"github.com/ArminGh02/othello-bot/pkg/othellogame/internal/color"
+	"github.com/ArminGh02/othello-bot/pkg/othellogame/cell"
+	"github.com/ArminGh02/othello-bot/pkg/othellogame/color"
 )
 
 type Turn bool

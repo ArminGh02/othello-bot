@@ -3,10 +3,10 @@ package othellogame
 import (
 	"fmt"
 
-	"github.com/ArminGh02/othello-bot/pkg/othellogame/internal/cell"
-	"github.com/ArminGh02/othello-bot/pkg/othellogame/internal/color"
-	"github.com/ArminGh02/othello-bot/pkg/othellogame/internal/direction"
-	"github.com/ArminGh02/othello-bot/pkg/othellogame/internal/turn"
+	"github.com/ArminGh02/othello-bot/pkg/othellogame/cell"
+	"github.com/ArminGh02/othello-bot/pkg/othellogame/color"
+	"github.com/ArminGh02/othello-bot/pkg/othellogame/direction"
+	"github.com/ArminGh02/othello-bot/pkg/othellogame/turn"
 	"github.com/ArminGh02/othello-bot/pkg/util"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
