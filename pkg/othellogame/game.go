@@ -143,10 +143,8 @@ func (g *Game) flipDisks(where coord.Coord) {
 	opponent := g.turn.Cell().Reversed()
 	directionsToFlip := g.findDirectionsToFlip(where)
 	for _, dir := range directionsToFlip {
-		for x, y := where.X+offset[dir].X, where.Y+offset[dir].Y; g.board[y][x] == opponent; {
-			g.board[y][x] = g.turn.Cell()
-			x += offset[dir].X
-			y += offset[dir].Y
+		for c := coord.Plus(where, offset[dir]); g.board[c.Y][c.X] == opponent; c.Plus(offset[dir]) {
+			g.board[c.Y][c.X] = g.turn.Cell()
 		}
 	}
 }
