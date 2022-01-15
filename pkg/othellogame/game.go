@@ -156,6 +156,7 @@ func (g *Game) findDirectionsToFlip(where util.Coord) []direction.Direction {
 	for i := direction.NORTH_WEST; i < direction.COUNT; i++ {
 		x, y := where.X+offset[i].X, where.Y+offset[i].Y
 		if isValidCoord(x, y, len(g.board)) && g.board[y][x] == opponent {
+		loop:
 			for {
 				x += offset[i].X
 				y += offset[i].Y
@@ -167,9 +168,9 @@ func (g *Game) findDirectionsToFlip(where util.Coord) []direction.Direction {
 				switch g.board[y][x] {
 				case g.turn.Cell():
 					res = append(res, i)
-					break
+					break loop
 				case cell.EMPTY:
-					break
+					break loop
 				}
 			}
 		}
