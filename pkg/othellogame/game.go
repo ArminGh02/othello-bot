@@ -8,10 +8,11 @@ import (
 	"github.com/ArminGh02/othello-bot/pkg/othellogame/direction"
 	"github.com/ArminGh02/othello-bot/pkg/othellogame/turn"
 	"github.com/ArminGh02/othello-bot/pkg/util"
+	"github.com/ArminGh02/othello-bot/pkg/util/coord"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-var offset = [direction.COUNT]util.Coord{
+var offset = [direction.COUNT]coord.Coord{
 	{X: -1, Y: -1},
 	{X: 0, Y: -1},
 	{X: 1, Y: -1},
@@ -96,7 +97,7 @@ func (g *Game) InlineKeyboard() [][]tgbotapi.InlineKeyboardButton {
 	return keyboard
 }
 
-func (g *Game) PlaceDisk(where util.Coord, user *tgbotapi.User) error {
+func (g *Game) PlaceDisk(where coord.Coord, user *tgbotapi.User) error {
 	if err := g.checkPlacingDisk(where, user); err != nil {
 		return err
 	}
@@ -125,7 +126,7 @@ func (g *Game) isTurnOf(user *tgbotapi.User) bool {
 	return *g.ActiveUser() == *user
 }
 
-func (g *Game) checkPlacingDisk(where util.Coord, user *tgbotapi.User) error {
+func (g *Game) checkPlacingDisk(where coord.Coord, user *tgbotapi.User) error {
 	if !g.isTurnOf(user) {
 		return fmt.Errorf("It's not your turn!")
 	}
@@ -138,7 +139,7 @@ func (g *Game) checkPlacingDisk(where util.Coord, user *tgbotapi.User) error {
 	return nil
 }
 
-func (g *Game) flipDisks(where util.Coord) {
+func (g *Game) flipDisks(where coord.Coord) {
 	opponent := g.turn.Cell().Reversed()
 	directionsToFlip := g.findDirectionsToFlip(where)
 	for _, dir := range directionsToFlip {
@@ -150,22 +151,21 @@ func (g *Game) flipDisks(where util.Coord) {
 	}
 }
 
-func (g *Game) findDirectionsToFlip(where util.Coord) []direction.Direction {
+func (g *Game) findDirectionsToFlip(where coord.Coord) []direction.Direction {
 	opponent := g.turn.Cell().Reversed()
 	res := make([]direction.Direction, 0, direction.COUNT)
 	for i := direction.NORTH_WEST; i < direction.COUNT; i++ {
-		x, y := where.X+offset[i].X, where.Y+offset[i].Y
-		if isValidCoord(x, y, len(g.board)) && g.board[y][x] == opponent {
+		c := coord.Plus(where, offset[i])
+		if isValidCoord(c, len(g.board)) && g.board[c.Y][c.X] == opponent {
 		loop:
 			for {
-				x += offset[i].X
-				y += offset[i].Y
+				c.Plus(offset[i])
 
-				if !isValidCoord(x, y, len(g.board)) {
+				if !isValidCoord(c, len(g.board)) {
 					break
 				}
 
-				switch g.board[y][x] {
+				switch g.board[c.Y][c.X] {
 				case g.turn.Cell():
 					res = append(res, i)
 					break loop
@@ -178,8 +178,8 @@ func (g *Game) findDirectionsToFlip(where util.Coord) []direction.Direction {
 	return res
 }
 
-func isValidCoord(x, y, length int) bool {
-	return x >= 0 && y >= 0 && x < length && y < length
+func isValidCoord(c coord.Coord, length int) bool {
+	return c.X >= 0 && c.Y >= 0 && c.X < length && c.Y < length
 }
 
 func (g *Game) passTurn() {
@@ -190,14 +190,14 @@ func (g *Game) updatePlaceableCoords() {
 	g.placeableCoords.Clear()
 	for y := range g.board {
 		for x := range g.board[y] {
-			if coord := util.NewCoord(x, y); g.isPlaceableCoord(coord) {
+			if coord := coord.New(x, y); g.isPlaceableCoord(coord) {
 				g.placeableCoords.Insert(coord)
 			}
 		}
 	}
 }
 
-func (g *Game) isPlaceableCoord(where util.Coord) bool {
+func (g *Game) isPlaceableCoord(where coord.Coord) bool {
 	return len(g.findDirectionsToFlip(where)) > 0
 }
 
