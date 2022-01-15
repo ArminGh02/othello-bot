@@ -54,7 +54,7 @@ func (bot *Bot) handleUpdate(update tgbotapi.Update) {
 	case update.CallbackQuery != nil:
 		bot.handleCallbackQuery(update)
 	case update.InlineQuery != nil:
-		bot.handleInlineQuery(update)
+		bot.handleInlineQuery(update.InlineQuery)
 	case update.ChosenInlineResult != nil:
 		bot.handleChosenInlineResult(update.ChosenInlineResult)
 	}
@@ -186,7 +186,7 @@ func (bot *Bot) placeDisk(callbackQueryData string, game *othellogame.Game, user
 	return game.PlaceDisk(where, user)
 }
 
-func (bot *Bot) handleInlineQuery(update tgbotapi.Update) {
+func (bot *Bot) handleInlineQuery(inlineQuery *tgbotapi.InlineQuery) {
 	game := tgbotapi.NewInlineQueryResultArticleMarkdownV2(
 		uuid.NewString(),
 		"Othello",
@@ -199,7 +199,7 @@ func (bot *Bot) handleInlineQuery(update tgbotapi.Update) {
 	game.ThumbHeight = 280
 
 	bot.api.Request(tgbotapi.InlineConfig{
-		InlineQueryID: update.InlineQuery.ID,
+		InlineQueryID: inlineQuery.ID,
 		Results:       []interface{}{game},
 	})
 }
