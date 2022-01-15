@@ -3,25 +3,29 @@ package othellobot
 import (
 	"fmt"
 	"log"
+	"regexp"
 	"sync"
 
-	"github.com/ArminGh02/othello-bot/pkg/consts"
 	"github.com/ArminGh02/othello-bot/pkg/othellogame"
+	"github.com/ArminGh02/othello-bot/pkg/util"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/google/uuid"
 )
 
 type Bot struct {
-	token               string
-	api                 *tgbotapi.BotAPI
-	usersToCurrentGames map[*tgbotapi.User]*othellogame.Game
-	mu                  sync.Mutex
+	token                        string
+	api                          *tgbotapi.BotAPI
+	inlineMessageIDsToUsers      map[string]*tgbotapi.User
+	inlineMessageIDsToUsersMutex sync.Mutex
+	usersToCurrentGames          map[tgbotapi.User]*othellogame.Game
+	usersToCurrentGamesMutex     sync.Mutex
 }
 
 func New(token string) *Bot {
 	return &Bot{
-		token:               token,
-		usersToCurrentGames: make(map[*tgbotapi.User]*othellogame.Game),
+		token:                   token,
+		usersToCurrentGames:     make(map[tgbotapi.User]*othellogame.Game),
+		inlineMessageIDsToUsers: make(map[string]*tgbotapi.User),
 	}
 }
 
@@ -29,12 +33,15 @@ func (bot *Bot) Run() {
 	var err error
 	bot.api, err = tgbotapi.NewBotAPI(bot.token)
 	if err != nil {
-		log.Panic(err)
+		log.Panicln(err)
 	}
 
 	updateConfig := tgbotapi.NewUpdate(0)
 	updateConfig.Timeout = 60
 	updates := bot.api.GetUpdatesChan(updateConfig)
+
+	log.Println("Bot started.")
+
 	for update := range updates {
 		go bot.handleUpdate(update)
 	}
@@ -48,6 +55,8 @@ func (bot *Bot) handleUpdate(update tgbotapi.Update) {
 		bot.handleCallbackQuery(update)
 	case update.InlineQuery != nil:
 		bot.handleInlineQuery(update)
+	case update.ChosenInlineResult != nil:
+		bot.handleChosenInlineResult(update.ChosenInlineResult)
 	}
 }
 
@@ -109,14 +118,37 @@ func (bot *Bot) showHelp(update tgbotapi.Update) {
 
 func (bot *Bot) handleCallbackQuery(update tgbotapi.Update) {
 	query := update.CallbackQuery
-	switch data := query.Data; data {
+	data := query.Data
+
+	if match, _ := regexp.MatchString("^\\d+_\\d+$", data); match {
+		user := query.From
+
+		bot.usersToCurrentGamesMutex.Lock()
+		game, ok := bot.usersToCurrentGames[*user]
+		if !ok {
+			log.Panicf("Invalid state: usersToCurrentGames does not contain %v\n", user)
+		}
+		err := bot.placeDisk(data, game, user)
+		bot.usersToCurrentGamesMutex.Unlock()
+
+		if err != nil {
+			bot.api.Request(tgbotapi.NewCallback(query.ID, err.Error()))
+		} else if game.IsEnded() {
+			// TODO
+			bot.api.Request(tgbotapi.NewCallback(query.ID, "Game is over!"))
+		} else {
+			bot.api.Send(getEditedMsgOfGame(query.InlineMessageID, game))
+			bot.api.Request(tgbotapi.NewCallback(query.ID, "Disk placed!"))
+		}
+		return
+	}
+
+	switch data {
 	case "playWithRandomOpponent":
 		// TODO: implement
 		bot.api.Send(tgbotapi.NewMessage(update.FromChat().ID, "Not implemented yet!"))
 	case "join":
 		bot.startNewGame(update)
-	default:
-
 	}
 
 	bot.api.Request(tgbotapi.CallbackConfig{
@@ -127,27 +159,31 @@ func (bot *Bot) handleCallbackQuery(update tgbotapi.Update) {
 func (bot *Bot) startNewGame(update tgbotapi.Update) {
 	query := update.CallbackQuery
 
-	user1 := query.Message.From
+	bot.inlineMessageIDsToUsersMutex.Lock()
+	user1, ok := bot.inlineMessageIDsToUsers[query.InlineMessageID]
+	if !ok {
+		log.Panicf("Invalid state: inlineMessageIDsToUsers does not contain %v\n", query.InlineMessageID)
+	}
+	bot.inlineMessageIDsToUsersMutex.Unlock()
+
 	user2 := query.From
+
 	game := othellogame.New(user1, user2)
 
-	bot.mu.Lock()
-	bot.usersToCurrentGames[user1] = game
-	bot.usersToCurrentGames[user2] = game
-	bot.mu.Unlock()
+	log.Printf("Started %s\n", game)
 
-	msgText := fmt.Sprintf("%s%s: %d\n%s%s: %d\nDon't count your chickens before they hatch!",
-		consts.WHITE_DISK_EMOJI,
-		game.WhiteUser(),
-		game.WhiteDisks(),
-		consts.BLACK_DISK_EMOJI,
-		game.BlackUser(),
-		game.BlackDisks(),
-	)
-	msg := tgbotapi.NewMessage(update.FromChat().ID, msgText)
-	msg.ReplyMarkup = tgbotapi.InlineKeyboardMarkup{InlineKeyboard: game.InlineKeyboard()}
+	bot.usersToCurrentGamesMutex.Lock()
+	bot.usersToCurrentGames[*user1] = game
+	bot.usersToCurrentGames[*user2] = game
+	bot.usersToCurrentGamesMutex.Unlock()
 
-	bot.api.Send(msg)
+	bot.api.Send(getEditedMsgOfGame(query.InlineMessageID, game))
+}
+
+func (bot *Bot) placeDisk(callbackQueryData string, game *othellogame.Game, user *tgbotapi.User) error {
+	var where util.Coord
+	fmt.Sscanf(callbackQueryData, "%d_%d", &where.X, &where.Y)
+	return game.PlaceDisk(where, user)
 }
 
 func (bot *Bot) handleInlineQuery(update tgbotapi.Update) {
@@ -166,4 +202,13 @@ func (bot *Bot) handleInlineQuery(update tgbotapi.Update) {
 		InlineQueryID: update.InlineQuery.ID,
 		Results:       []interface{}{game},
 	})
+}
+
+func (bot *Bot) handleChosenInlineResult(chosenInlineResult *tgbotapi.ChosenInlineResult) {
+	user := chosenInlineResult.From
+	id := chosenInlineResult.InlineMessageID
+
+	bot.inlineMessageIDsToUsersMutex.Lock()
+	bot.inlineMessageIDsToUsers[id] = user
+	bot.inlineMessageIDsToUsersMutex.Unlock()
 }
