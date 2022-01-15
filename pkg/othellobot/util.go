@@ -8,15 +8,16 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-func getGameMsg(activeUser, whiteUser, blackUser *tgbotapi.User, whiteDisks, blackDisks int) string {
-	return fmt.Sprintf("Turn of: %s\n%s%s: %d\n%s%s: %d\nDon't count your chickens before they hatch!",
-		activeUser.FirstName,
+func getGameMsg(game *othellogame.Game) string {
+	return fmt.Sprintf("Turn of: %s%s\n%s%s: %d\n%s%s: %d\nDon't count your chickens before they hatch!",
+		game.ActiveColor(),
+		game.ActiveUser().FirstName,
 		consts.WHITE_DISK_EMOJI,
-		whiteUser.FirstName,
-		whiteDisks,
+		game.WhiteUser().FirstName,
+		game.WhiteDisks(),
 		consts.BLACK_DISK_EMOJI,
-		blackUser.FirstName,
-		blackDisks,
+		game.BlackUser().FirstName,
+		game.BlackDisks(),
 	)
 }
 
@@ -26,11 +27,7 @@ func getEditedMsgOfGame(inlineMessageID string, game *othellogame.Game) tgbotapi
 			InlineMessageID: inlineMessageID,
 			ReplyMarkup:     &tgbotapi.InlineKeyboardMarkup{InlineKeyboard: game.InlineKeyboard()},
 		},
-		Text: getGameMsg(
-			game.ActiveUser(),
-			game.WhiteUser(), game.BlackUser(),
-			game.WhiteDisks(), game.BlackDisks(),
-		),
+		Text: getGameMsg(game),
 	}
 }
 
