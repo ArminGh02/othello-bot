@@ -23,7 +23,7 @@ var offset = [direction.COUNT]util.Coord{
 }
 
 type Game struct {
-	users           [2]*tgbotapi.User
+	users           [2]tgbotapi.User
 	disksCount      [2]int
 	board           [BOARD_SIZE][BOARD_SIZE]cell.Cell
 	turn            turn.Turn
@@ -33,7 +33,7 @@ type Game struct {
 
 func New(user1, user2 *tgbotapi.User) *Game {
 	g := &Game{
-		users:           [2]*tgbotapi.User{user1, user2},
+		users:           [2]tgbotapi.User{*user1, *user2},
 		disksCount:      [2]int{2, 2},
 		turn:            turn.Random(),
 		placeableCoords: util.NewCoordSet(),
@@ -49,7 +49,7 @@ func New(user1, user2 *tgbotapi.User) *Game {
 }
 
 func (g *Game) String() string {
-	return fmt.Sprintf("Game between %s and %s", g.users[0], g.users[1])
+	return fmt.Sprintf("Game between %v and %v", g.users[0], g.users[1])
 }
 
 func (g *Game) ActiveColor() string {
@@ -57,15 +57,15 @@ func (g *Game) ActiveColor() string {
 }
 
 func (g *Game) ActiveUser() *tgbotapi.User {
-	return g.users[g.turn.Int()]
+	return &g.users[g.turn.Int()]
 }
 
 func (g *Game) WhiteUser() *tgbotapi.User {
-	return g.users[color.WHITE]
+	return &g.users[color.WHITE]
 }
 
 func (g *Game) BlackUser() *tgbotapi.User {
-	return g.users[color.BLACK]
+	return &g.users[color.BLACK]
 }
 
 func (g *Game) WhiteDisks() int {
@@ -120,7 +120,7 @@ func (g *Game) PlaceDisk(where util.Coord, user *tgbotapi.User) error {
 }
 
 func (g *Game) isTurnOf(user *tgbotapi.User) bool {
-	return g.ActiveUser() == user
+	return *g.ActiveUser() == *user
 }
 
 func (g *Game) checkPlacingDisk(where util.Coord, user *tgbotapi.User) error {
