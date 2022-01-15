@@ -139,7 +139,8 @@ func (bot *Bot) handleCallbackQuery(update tgbotapi.Update) {
 	})
 }
 
-func (bot *Bot) placeDisk(query *tgbotapi.CallbackQuery) {
+func (bot *Bot) placeDisk(update *tgbotapi.Update) {
+	query := update.CallbackQuery
 	user := query.From
 
 	bot.usersToCurrentGamesMutex.Lock()
@@ -162,7 +163,14 @@ func (bot *Bot) placeDisk(query *tgbotapi.CallbackQuery) {
 		// TODO
 		bot.api.Request(tgbotapi.NewCallback(query.ID, "Game is over!"))
 	} else {
-		bot.api.Send(getEditedMsgOfGame(query.InlineMessageID, game))
+		if query.InlineMessageID != "" {
+			bot.api.Send(getEditedMsgOfGame(query.InlineMessageID, game))
+		} else {
+			msg := tgbotapi.NewMessage(update.FromChat().ID, getGameMsg(game))
+			msg.ReplyMarkup = &tgbotapi.InlineKeyboardMarkup{InlineKeyboard: game.InlineKeyboard()}
+
+			bot.api.Send(msg)
+		}
 		bot.api.Request(tgbotapi.NewCallback(query.ID, "Disk placed!"))
 	}
 }
