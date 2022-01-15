@@ -123,7 +123,7 @@ func (bot *Bot) handleCallbackQuery(update tgbotapi.Update) {
 	data := query.Data
 
 	if match, _ := regexp.MatchString("^\\d+_\\d+$", data); match {
-		bot.placeDisk(query)
+		bot.placeDisk(update)
 		return
 	}
 
@@ -139,7 +139,7 @@ func (bot *Bot) handleCallbackQuery(update tgbotapi.Update) {
 	})
 }
 
-func (bot *Bot) placeDisk(update *tgbotapi.Update) {
+func (bot *Bot) placeDisk(update tgbotapi.Update) {
 	query := update.CallbackQuery
 	user := query.From
 
@@ -166,9 +166,12 @@ func (bot *Bot) placeDisk(update *tgbotapi.Update) {
 		if query.InlineMessageID != "" {
 			bot.api.Send(getEditedMsgOfGame(query.InlineMessageID, game))
 		} else {
-			msg := tgbotapi.NewMessage(update.FromChat().ID, getGameMsg(game))
-			msg.ReplyMarkup = &tgbotapi.InlineKeyboardMarkup{InlineKeyboard: game.InlineKeyboard()}
-
+			msg := tgbotapi.NewEditMessageTextAndMarkup(
+				update.FromChat().ID,
+				query.Message.MessageID,
+				getGameMsg(game),
+				tgbotapi.InlineKeyboardMarkup{InlineKeyboard: game.InlineKeyboard()},
+			)
 			bot.api.Send(msg)
 		}
 		bot.api.Request(tgbotapi.NewCallback(query.ID, "Disk placed!"))
