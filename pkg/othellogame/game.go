@@ -205,9 +205,10 @@ func (g *Game) updateDisksCount() {
 	white, black := 0, 0
 	for _, row := range g.board {
 		for _, c := range row {
-			if c == cell.WHITE {
+			switch c {
+			case cell.WHITE:
 				white++
-			} else if c == cell.BLACK {
+			case cell.BLACK:
 				black++
 			}
 		}
