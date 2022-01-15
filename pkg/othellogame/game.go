@@ -45,6 +45,8 @@ func New(user1, user2 *tgbotapi.User) *Game {
 	g.board[mid+1][mid] = cell.BLACK
 	g.board[mid+1][mid+1] = cell.WHITE
 
+	g.updatePlaceableCoords()
+
 	return g
 }
 
