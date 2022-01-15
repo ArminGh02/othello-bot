@@ -131,7 +131,7 @@ func (bot *Bot) handleCallbackQuery(update tgbotapi.Update) {
 	case "playWithRandomOpponent":
 		bot.playWithRandomOpponent(update)
 	case "join":
-		bot.startNewGame(update)
+		bot.startNewGameWithFriend(update)
 	}
 
 	bot.api.Request(tgbotapi.CallbackConfig{
@@ -167,7 +167,7 @@ func (bot *Bot) placeDisk(query *tgbotapi.CallbackQuery) {
 	}
 }
 
-func (bot *Bot) startNewGame(update tgbotapi.Update) {
+func (bot *Bot) startNewGameWithFriend(update tgbotapi.Update) {
 	query := update.CallbackQuery
 
 	bot.inlineMessageIDsToUsersMutex.Lock()
