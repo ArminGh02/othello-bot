@@ -84,12 +84,12 @@ func (g *Game) IsEnded() bool {
 
 func (g *Game) InlineKeyboard() [][]tgbotapi.InlineKeyboardButton {
 	keyboard := make([][]tgbotapi.InlineKeyboardButton, len(g.board))
-	for i := range keyboard {
-		keyboard[i] = make([]tgbotapi.InlineKeyboardButton, len(g.board[i]))
-		for j, cell := range g.board[i] {
-			keyboard[i][j] = tgbotapi.NewInlineKeyboardButtonData(
+	for y := range keyboard {
+		keyboard[y] = make([]tgbotapi.InlineKeyboardButton, len(g.board[y]))
+		for x, cell := range g.board[y] {
+			keyboard[y][x] = tgbotapi.NewInlineKeyboardButtonData(
 				cell.Emoji(),
-				fmt.Sprintf("%d_%d", j, i),
+				fmt.Sprintf("%d_%d", x, y),
 			)
 		}
 	}
