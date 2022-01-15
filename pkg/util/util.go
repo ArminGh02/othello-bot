@@ -1,24 +1,14 @@
 package util
 
-type Coord struct {
-	X int
-	Y int
-}
-
-func NewCoord(x, y int) Coord {
-	return Coord{
-		X: x,
-		Y: y,
-	}
-}
+import "github.com/ArminGh02/othello-bot/pkg/util/coord"
 
 type CoordSet struct {
-	m map[Coord]struct{}
+	m map[coord.Coord]struct{}
 }
 
 func NewCoordSet() CoordSet {
 	return CoordSet{
-		m: make(map[Coord]struct{}),
+		m: make(map[coord.Coord]struct{}),
 	}
 }
 
@@ -28,11 +18,11 @@ func (set *CoordSet) Clear() {
 	}
 }
 
-func (set *CoordSet) Insert(c Coord) {
+func (set *CoordSet) Insert(c coord.Coord) {
 	set.m[c] = struct{}{}
 }
 
-func (set *CoordSet) Contains(c Coord) bool {
+func (set *CoordSet) Contains(c coord.Coord) bool {
 	_, present := set.m[c]
 	return present
 }
