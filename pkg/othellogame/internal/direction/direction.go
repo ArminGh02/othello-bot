@@ -5,7 +5,7 @@ const COUNT = 8
 type Direction int
 
 const (
-	NORTH_WEST = iota
+	NORTH_WEST Direction = iota
 	NORTH
 	NORTH_EAST
 	WEST
