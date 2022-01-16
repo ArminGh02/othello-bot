@@ -3,6 +3,7 @@ package othellogame
 import (
 	"fmt"
 
+	"github.com/ArminGh02/othello-bot/pkg/consts"
 	"github.com/ArminGh02/othello-bot/pkg/othellogame/cell"
 	"github.com/ArminGh02/othello-bot/pkg/othellogame/color"
 	"github.com/ArminGh02/othello-bot/pkg/othellogame/direction"
@@ -83,13 +84,20 @@ func (g *Game) IsEnded() bool {
 	return g.ended
 }
 
-func (g *Game) InlineKeyboard() [][]tgbotapi.InlineKeyboardButton {
+func (g *Game) InlineKeyboard(showLegalMoves bool) [][]tgbotapi.InlineKeyboardButton {
 	keyboard := make([][]tgbotapi.InlineKeyboardButton, len(g.board))
 	for y := range g.board {
 		keyboard[y] = make([]tgbotapi.InlineKeyboardButton, len(g.board[y]))
 		for x, cell := range g.board[y] {
+			var buttonText string
+			if showLegalMoves && g.placeableCoords.Contains(coord.New(x, y)) {
+				buttonText = consts.LEGAL_MOVE_EMOJI
+			} else {
+				buttonText = cell.Emoji()
+			}
+
 			keyboard[y][x] = tgbotapi.NewInlineKeyboardButtonData(
-				cell.Emoji(),
+				buttonText,
 				fmt.Sprintf("%d_%d", x, y),
 			)
 		}
