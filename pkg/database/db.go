@@ -102,6 +102,18 @@ func (db *DBHandler) IncrementDraws(userID int64) {
 	}
 }
 
+func (db *DBHandler) ProfileOf(userID int64) *PlayerDoc {
+	var doc PlayerDoc
+	err := db.coll.FindOne(context.TODO(), bson.D{{"user_id", userID}}).Decode(&doc)
+	if err == mongo.ErrNoDocuments {
+		log.Fatalln("An attempt was made to retrieve the user that wan not inserted.")
+	}
+	if err != nil {
+		log.Panicln(err)
+	}
+	return &doc
+}
+
 func (db *DBHandler) Disconnect() {
 	if err := db.client.Disconnect(context.TODO()); err != nil {
 		log.Panicln(err)
