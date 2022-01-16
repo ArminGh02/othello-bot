@@ -9,12 +9,12 @@ import (
 )
 
 type PlayerDoc struct {
-	UserID             int64
-	Name               string
-	Wins               int
-	Losses             int
-	Draws              int
-	LegalMovesAreShown bool
+	UserID             int64  `bson:"user_id"`
+	Name               string `bson:"name"`
+	Wins               int    `bson:"wins"`
+	Losses             int    `bson:"losses"`
+	Draws              int    `bson:"draws"`
+	LegalMovesAreShown bool   `bson:"legal_moves_are_shown"`
 }
 
 func newPlayerDoc(userID int64, name string, wins, losses, draws int, legalMovesAreShown bool) *PlayerDoc {
