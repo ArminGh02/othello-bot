@@ -171,9 +171,18 @@ func (bot *Bot) placeDisk(update tgbotapi.Update) {
 		bot.api.Request(tgbotapi.NewCallback(query.ID, "Game is over!"))
 	} else {
 		if query.InlineMessageID != "" {
-			bot.api.Send(getEditedMsgOfGameInline(game, query.InlineMessageID))
+			bot.api.Send(getEditedMsgOfGameInline(
+				game,
+				query.InlineMessageID,
+				bot.db.LegalMovesAreShown(user.ID),
+			))
 		} else {
-			bot.api.Send(getEditedMsgOfGame(game, update.FromChat().ID, query.Message.MessageID))
+			bot.api.Send(getEditedMsgOfGame(
+				game,
+				update.FromChat().ID,
+				query.Message.MessageID,
+				bot.db.LegalMovesAreShown(user.ID),
+			))
 		}
 		bot.api.Request(tgbotapi.NewCallback(query.ID, "Disk placed!"))
 	}
@@ -200,7 +209,11 @@ func (bot *Bot) startNewGameWithFriend(update tgbotapi.Update) {
 	bot.usersToCurrentGames[*user2] = game
 	bot.usersToCurrentGamesMutex.Unlock()
 
-	bot.api.Send(getEditedMsgOfGameInline(game, query.InlineMessageID))
+	bot.api.Send(getEditedMsgOfGameInline(
+		game,
+		query.InlineMessageID,
+		bot.db.LegalMovesAreShown(game.ActiveUser().ID),
+	))
 }
 
 func (bot *Bot) playWithRandomOpponent(update tgbotapi.Update) {
@@ -222,7 +235,9 @@ func (bot *Bot) playWithRandomOpponent(update tgbotapi.Update) {
 	bot.usersToCurrentGamesMutex.Unlock()
 
 	msg := tgbotapi.NewMessage(update.FromChat().ID, getGameMsg(game))
-	msg.ReplyMarkup = &tgbotapi.InlineKeyboardMarkup{InlineKeyboard: game.InlineKeyboard(true)} //TODO
+	msg.ReplyMarkup = &tgbotapi.InlineKeyboardMarkup{
+		InlineKeyboard: game.InlineKeyboard(bot.db.LegalMovesAreShown(game.ActiveUser().ID)),
+	}
 
 	bot.api.Send(msg)
 }
