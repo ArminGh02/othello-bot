@@ -21,14 +21,23 @@ func getGameMsg(game *othellogame.Game) string {
 	)
 }
 
-func getEditedMsgOfGame(inlineMessageID string, game *othellogame.Game) tgbotapi.EditMessageTextConfig {
+func getEditedMsgOfGameInline(game *othellogame.Game, inlineMessageID string) tgbotapi.Chattable {
 	return tgbotapi.EditMessageTextConfig{
 		BaseEdit: tgbotapi.BaseEdit{
 			InlineMessageID: inlineMessageID,
-			ReplyMarkup:     &tgbotapi.InlineKeyboardMarkup{InlineKeyboard: game.InlineKeyboard()},
+			ReplyMarkup:     &tgbotapi.InlineKeyboardMarkup{InlineKeyboard: game.InlineKeyboard(true)}, //TODO
 		},
 		Text: getGameMsg(game),
 	}
+}
+
+func getEditedMsgOfGame(game *othellogame.Game, chatID int64, messageID int) tgbotapi.Chattable {
+	return tgbotapi.NewEditMessageTextAndMarkup(
+		chatID,
+		messageID,
+		getGameMsg(game),
+		tgbotapi.InlineKeyboardMarkup{InlineKeyboard: game.InlineKeyboard(true)}, //TODO
+	)
 }
 
 func buildMainKeyboard() tgbotapi.ReplyKeyboardMarkup {
