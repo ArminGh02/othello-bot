@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -51,4 +52,16 @@ func (db *DBHandler) AddPlayer(userID int64, name string) {
 	if err != nil {
 		log.Panicln(err)
 	}
+}
+
+func (db *DBHandler) LegalMovesAreShown(userID int64) bool {
+	var doc PlayerDoc
+	err := db.coll.FindOne(context.TODO(), bson.D{{"user_id", userID}}).Decode(&doc)
+	if err == mongo.ErrNoDocuments {
+		log.Fatalln("An attempt was made to retrieve the user that wan not inserted.")
+	}
+	if err != nil {
+		log.Panicln(err)
+	}
+	return doc.LegalMovesAreShown
 }
