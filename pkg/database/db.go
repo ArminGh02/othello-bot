@@ -40,6 +40,9 @@ func New(uri string) *DBHandler {
 		log.Fatalln(err)
 	}
 	coll := client.Database("othello_bot").Collection("players")
+
+	log.Println("Connected to MongoDB")
+
 	return &DBHandler{
 		client: client,
 		coll:   coll,
