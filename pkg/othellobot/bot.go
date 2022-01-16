@@ -45,6 +45,8 @@ func (bot *Bot) Run() {
 	updateConfig.Timeout = 60
 	updates := bot.api.GetUpdatesChan(updateConfig)
 
+	defer bot.db.Disconnect()
+
 	log.Println("Bot started.")
 
 	for update := range updates {
