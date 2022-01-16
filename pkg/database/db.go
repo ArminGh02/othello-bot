@@ -98,7 +98,7 @@ func (db *DBHandler) Disconnect() {
 
 func handleErr(err error) {
 	if err == mongo.ErrNoDocuments {
-		log.Panicln("An attempt was made to retrieve the user that wan not inserted.", err)
+		log.Panicln("An attempt was made to retrieve the user that was not inserted.", err)
 	}
 	if err != nil {
 		log.Panicln(err)
