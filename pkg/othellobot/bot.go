@@ -85,14 +85,18 @@ func (bot *Bot) handleMessage(update tgbotapi.Update) {
 func (bot *Bot) handleCommand(update tgbotapi.Update) {
 	switch command := update.Message.Command(); command {
 	case "start":
+		user := update.SentFrom()
+
 		msgText := fmt.Sprintf("Hi %s\\!\n"+
 			"I am *Othello Bot*\\.\n"+
 			"Have fun playing Othello strategic board game,\n"+
-			"with your friends or opponents around the world\\!", update.SentFrom().FirstName)
+			"with your friends or opponents around the world\\!", user.FirstName)
 		msg := tgbotapi.NewMessage(update.FromChat().ID, msgText)
 		msg.ReplyMarkup = buildMainKeyboard()
 		msg.ParseMode = "MarkdownV2"
 		bot.api.Send(msg)
+
+		bot.db.AddPlayer(user.ID, getFullNameOf(user))
 	default:
 		msgText := fmt.Sprintf("Sorry! %s is not recognized as a command.", command)
 		bot.api.Send(tgbotapi.NewMessage(update.FromChat().ID, msgText))
