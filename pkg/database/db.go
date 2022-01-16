@@ -65,3 +65,9 @@ func (db *DBHandler) LegalMovesAreShown(userID int64) bool {
 	}
 	return doc.LegalMovesAreShown
 }
+
+func (db *DBHandler) Disconnect() {
+	if err := db.client.Disconnect(context.TODO()); err != nil {
+		log.Panic(err)
+	}
+}
