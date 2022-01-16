@@ -44,3 +44,11 @@ func New(uri string) *DBHandler {
 		coll:   coll,
 	}
 }
+
+func (db *DBHandler) AddPlayer(userID int64, name string) {
+	doc := newPlayerDoc(userID, name, 0, 0, 0, true)
+	_, err := db.coll.InsertOne(context.TODO(), doc)
+	if err != nil {
+		log.Panicln(err)
+	}
+}
