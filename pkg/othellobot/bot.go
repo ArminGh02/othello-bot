@@ -169,8 +169,8 @@ func (bot *Bot) placeDisk(update tgbotapi.Update) {
 	} else if game.IsEnded() {
 		winner, loser := game.Winner(), game.Loser()
 		if winner == nil {
-			bot.db.IncrementDraws(winner.ID)
-			bot.db.IncrementDraws(loser.ID)
+			bot.db.IncrementDraws(game.WhiteUser().ID)
+			bot.db.IncrementDraws(game.BlackUser().ID)
 		} else {
 			bot.db.IncrementWins(winner.ID)
 			bot.db.IncrementLosses(loser.ID)
