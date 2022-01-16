@@ -167,7 +167,14 @@ func (bot *Bot) placeDisk(update tgbotapi.Update) {
 	if err != nil {
 		bot.api.Request(tgbotapi.NewCallback(query.ID, err.Error()))
 	} else if game.IsEnded() {
-		// TODO
+		winner, loser := game.Winner(), game.Loser()
+		if winner == nil {
+			bot.db.IncrementDraws(winner.ID)
+			bot.db.IncrementDraws(loser.ID)
+		} else {
+			bot.db.IncrementWins(winner.ID)
+			bot.db.IncrementLosses(loser.ID)
+		}
 		bot.api.Request(tgbotapi.NewCallback(query.ID, "Game is over!"))
 	} else {
 		if query.InlineMessageID != "" {
