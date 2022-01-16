@@ -98,6 +98,17 @@ func (g *Game) Winner() *tgbotapi.User {
 	return &g.users[color.BLACK]
 }
 
+func (g *Game) Loser() *tgbotapi.User {
+	winner := g.Winner()
+	if winner == nil {
+		return nil
+	}
+	if *winner == g.users[color.WHITE] {
+		return &g.users[color.BLACK]
+	}
+	return &g.users[color.WHITE]
+}
+
 func (g *Game) InlineKeyboard(showLegalMoves bool) [][]tgbotapi.InlineKeyboardButton {
 	keyboard := make([][]tgbotapi.InlineKeyboardButton, len(g.board))
 	for y := range g.board {
