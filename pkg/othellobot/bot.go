@@ -177,20 +177,22 @@ func (bot *Bot) placeDisk(update tgbotapi.Update) {
 		}
 		bot.api.Request(tgbotapi.NewCallback(query.ID, "Game is over!"))
 	} else {
+		var msg tgbotapi.Chattable
 		if query.InlineMessageID != "" {
-			bot.api.Send(getEditedMsgOfGameInline(
+			msg = getEditedMsgOfGameInline(
 				game,
 				query.InlineMessageID,
 				bot.db.LegalMovesAreShown(user.ID),
-			))
+			)
 		} else {
-			bot.api.Send(getEditedMsgOfGame(
+			msg = getEditedMsgOfGame(
 				game,
 				update.FromChat().ID,
 				query.Message.MessageID,
 				bot.db.LegalMovesAreShown(user.ID),
-			))
+			)
 		}
+		bot.api.Send(msg)
 		bot.api.Request(tgbotapi.NewCallback(query.ID, "Disk placed!"))
 	}
 }
