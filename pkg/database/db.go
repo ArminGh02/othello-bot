@@ -37,7 +37,7 @@ type DBHandler struct {
 func New(uri string) *DBHandler {
 	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(uri))
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 	coll := client.Database("othello_bot").Collection("players")
 	return &DBHandler{
@@ -66,8 +66,44 @@ func (db *DBHandler) LegalMovesAreShown(userID int64) bool {
 	return doc.LegalMovesAreShown
 }
 
+func (db *DBHandler) IncrementWins(userID int64) {
+	update := bson.D{
+		{"$inc", bson.D{
+			{"wins", 1},
+		}},
+	}
+	_, err := db.coll.UpdateOne(context.TODO(), bson.D{{"user_id", userID}}, update)
+	if err != nil {
+		log.Panicln(err)
+	}
+}
+
+func (db *DBHandler) IncrementLosses(userID int64) {
+	update := bson.D{
+		{"$inc", bson.D{
+			{"losses", 1},
+		}},
+	}
+	_, err := db.coll.UpdateOne(context.TODO(), bson.D{{"user_id", userID}}, update)
+	if err != nil {
+		log.Panicln(err)
+	}
+}
+
+func (db *DBHandler) IncrementDraws(userID int64) {
+	update := bson.D{
+		{"$inc", bson.D{
+			{"draws", 1},
+		}},
+	}
+	_, err := db.coll.UpdateOne(context.TODO(), bson.D{{"user_id", userID}}, update)
+	if err != nil {
+		log.Panicln(err)
+	}
+}
+
 func (db *DBHandler) Disconnect() {
 	if err := db.client.Disconnect(context.TODO()); err != nil {
-		log.Panic(err)
+		log.Panicln(err)
 	}
 }
