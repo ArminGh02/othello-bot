@@ -117,8 +117,14 @@ func (bot *Bot) showScoreboard(update tgbotapi.Update) {
 }
 
 func (bot *Bot) showProfile(update tgbotapi.Update) {
-	// TODO: implement
-	bot.api.Send(tgbotapi.NewMessage(update.FromChat().ID, "Not implemented yet!"))
+	profile := bot.db.ProfileOf(update.SentFrom().ID)
+	msg := fmt.Sprintf("%s's Profile:\nWins: %d\nLosses: %d\nDraws: %d",
+		profile.Name,
+		profile.Wins,
+		profile.Losses,
+		profile.Draws,
+	)
+	bot.api.Send(tgbotapi.NewMessage(update.FromChat().ID, msg))
 }
 
 func (bot *Bot) showHelp(update tgbotapi.Update) {
