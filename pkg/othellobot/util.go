@@ -8,6 +8,10 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
+func getFullNameOf(user *tgbotapi.User) string {
+	return user.FirstName + " " + user.LastName
+}
+
 func getGameMsg(game *othellogame.Game) string {
 	return fmt.Sprintf("Turn of: %s%s\n%s%s: %d\n%s%s: %d\nDon't count your chickens before they hatch!",
 		game.ActiveColor(),
