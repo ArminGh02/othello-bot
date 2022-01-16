@@ -61,6 +61,18 @@ func (db *DBHandler) LegalMovesAreShown(userID int64) bool {
 	return doc.LegalMovesAreShown
 }
 
+func (db *DBHandler) ToggleLegalMovesAreShown(userID int64) {
+	update := bson.D{
+		{"$set", bson.D{
+			{"legal_moves_are_shown", bson.D{
+				{"$not", "$legal_moves_are_shown"},
+			}},
+		}},
+	}
+	_, err := db.coll.UpdateOne(context.TODO(), bson.D{{"user_id", userID}}, update)
+	handleErr(err)
+}
+
 func (db *DBHandler) IncrementWins(userID int64) {
 	db.incrementProperty("wins", userID)
 }
