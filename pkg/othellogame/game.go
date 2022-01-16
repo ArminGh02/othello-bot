@@ -2,6 +2,7 @@ package othellogame
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/ArminGh02/othello-bot/pkg/consts"
 	"github.com/ArminGh02/othello-bot/pkg/othellogame/cell"
@@ -82,6 +83,19 @@ func (g *Game) BlackDisks() int {
 
 func (g *Game) IsEnded() bool {
 	return g.ended
+}
+
+func (g *Game) Winner() *tgbotapi.User {
+	if !g.ended {
+		log.Panicln("Invalid state: Winner called when game is still running")
+	}
+	if g.disksCount[color.WHITE] == g.disksCount[color.BLACK] {
+		return nil
+	}
+	if g.disksCount[color.WHITE] > g.disksCount[color.BLACK] {
+		return &g.users[color.WHITE]
+	}
+	return &g.users[color.BLACK]
 }
 
 func (g *Game) InlineKeyboard(showLegalMoves bool) [][]tgbotapi.InlineKeyboardButton {
