@@ -167,34 +167,42 @@ func (bot *Bot) placeDisk(update tgbotapi.Update) {
 	if err != nil {
 		bot.api.Request(tgbotapi.NewCallback(query.ID, err.Error()))
 	} else if game.IsEnded() {
-		winner, loser := game.Winner(), game.Loser()
-		if winner == nil {
-			bot.db.IncrementDraws(game.WhiteUser().ID)
-			bot.db.IncrementDraws(game.BlackUser().ID)
-		} else {
-			bot.db.IncrementWins(winner.ID)
-			bot.db.IncrementLosses(loser.ID)
-		}
-		bot.api.Request(tgbotapi.NewCallback(query.ID, "Game is over!"))
+		bot.handleGameEnd(game, query)
 	} else {
-		var msg tgbotapi.Chattable
-		if query.InlineMessageID != "" {
-			msg = getEditedMsgOfGameInline(
-				game,
-				query.InlineMessageID,
-				bot.db.LegalMovesAreShown(user.ID),
-			)
-		} else {
-			msg = getEditedMsgOfGame(
-				game,
-				update.FromChat().ID,
-				query.Message.MessageID,
-				bot.db.LegalMovesAreShown(user.ID),
-			)
-		}
-		bot.api.Send(msg)
-		bot.api.Request(tgbotapi.NewCallback(query.ID, "Disk placed!"))
+		bot.handleRunningGame(game, query, update.FromChat().ID, user.ID)
 	}
+}
+
+func (bot *Bot) handleGameEnd(game *othellogame.Game, query *tgbotapi.CallbackQuery) {
+	winner, loser := game.Winner(), game.Loser()
+	if winner == nil {
+		bot.db.IncrementDraws(game.WhiteUser().ID)
+		bot.db.IncrementDraws(game.BlackUser().ID)
+	} else {
+		bot.db.IncrementWins(winner.ID)
+		bot.db.IncrementLosses(loser.ID)
+	}
+	bot.api.Request(tgbotapi.NewCallback(query.ID, "Game is over!"))
+}
+
+func (bot *Bot) handleRunningGame(game *othellogame.Game, query *tgbotapi.CallbackQuery, chatID, userID int64) {
+	var msg tgbotapi.Chattable
+	if query.InlineMessageID != "" {
+		msg = getEditedMsgOfGameInline(
+			game,
+			query.InlineMessageID,
+			bot.db.LegalMovesAreShown(userID),
+		)
+	} else {
+		msg = getEditedMsgOfGame(
+			game,
+			chatID,
+			query.Message.MessageID,
+			bot.db.LegalMovesAreShown(userID),
+		)
+	}
+	bot.api.Send(msg)
+	bot.api.Request(tgbotapi.NewCallback(query.ID, "Disk placed!"))
 }
 
 func (bot *Bot) startNewGameWithFriend(update tgbotapi.Update) {
