@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"sync"
 
+	"github.com/ArminGh02/othello-bot/pkg/database"
 	"github.com/ArminGh02/othello-bot/pkg/othellogame"
 	"github.com/ArminGh02/othello-bot/pkg/util/coord"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -15,6 +16,7 @@ import (
 type Bot struct {
 	token                        string
 	api                          *tgbotapi.BotAPI
+	db                           *database.DBHandler
 	inlineMessageIDsToUsers      map[string]*tgbotapi.User
 	inlineMessageIDsToUsersMutex sync.Mutex
 	usersToCurrentGames          map[tgbotapi.User]*othellogame.Game
@@ -22,8 +24,9 @@ type Bot struct {
 	waitingPlayer                chan *tgbotapi.User
 }
 
-func New(token string) *Bot {
+func New(token string, mongodbURI string) *Bot {
 	return &Bot{
+		db:                      database.New(mongodbURI),
 		token:                   token,
 		usersToCurrentGames:     make(map[tgbotapi.User]*othellogame.Game),
 		inlineMessageIDsToUsers: make(map[string]*tgbotapi.User),

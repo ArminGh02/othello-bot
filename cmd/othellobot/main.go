@@ -11,12 +11,13 @@ import (
 
 func main() {
 	token := os.Getenv("OTHELLO_TOKEN")
-	if token == "" {
-		log.Fatalln("OTHELLO_TOKEN environment variable is not set.")
+	mongodbURI := os.Getenv("OTHELLO_MONGODB_URI")
+	if token == "" || mongodbURI == "" {
+		log.Fatalln("OTHELLO_TOKEN or OTHELLO_MONGODB_URI environment variable is not set.")
 	}
 
 	rand.Seed(time.Now().UnixNano())
 
-	bot := othellobot.New(token)
+	bot := othellobot.New(token, mongodbURI)
 	bot.Run()
 }
