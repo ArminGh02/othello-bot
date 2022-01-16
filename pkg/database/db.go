@@ -57,65 +57,50 @@ func (db *DBHandler) AddPlayer(userID int64, name string) {
 func (db *DBHandler) LegalMovesAreShown(userID int64) bool {
 	var doc PlayerDoc
 	err := db.coll.FindOne(context.TODO(), bson.D{{"user_id", userID}}).Decode(&doc)
-	if err == mongo.ErrNoDocuments {
-		log.Fatalln("An attempt was made to retrieve the user that wan not inserted.")
-	}
-	if err != nil {
-		log.Panicln(err)
-	}
+	handleErr(err)
 	return doc.LegalMovesAreShown
 }
 
 func (db *DBHandler) IncrementWins(userID int64) {
-	update := bson.D{
-		{"$inc", bson.D{
-			{"wins", 1},
-		}},
-	}
-	_, err := db.coll.UpdateOne(context.TODO(), bson.D{{"user_id", userID}}, update)
-	if err != nil {
-		log.Panicln(err)
-	}
+	db.incrementProperty("wins", userID)
 }
 
 func (db *DBHandler) IncrementLosses(userID int64) {
-	update := bson.D{
-		{"$inc", bson.D{
-			{"losses", 1},
-		}},
-	}
-	_, err := db.coll.UpdateOne(context.TODO(), bson.D{{"user_id", userID}}, update)
-	if err != nil {
-		log.Panicln(err)
-	}
+	db.incrementProperty("losses", userID)
 }
 
 func (db *DBHandler) IncrementDraws(userID int64) {
+	db.incrementProperty("draws", userID)
+}
+
+func (db *DBHandler) incrementProperty(propertyName string, userID int64) {
 	update := bson.D{
 		{"$inc", bson.D{
-			{"draws", 1},
+			{propertyName, 1},
 		}},
 	}
 	_, err := db.coll.UpdateOne(context.TODO(), bson.D{{"user_id", userID}}, update)
-	if err != nil {
-		log.Panicln(err)
-	}
+	handleErr(err)
 }
 
 func (db *DBHandler) ProfileOf(userID int64) *PlayerDoc {
 	var doc PlayerDoc
 	err := db.coll.FindOne(context.TODO(), bson.D{{"user_id", userID}}).Decode(&doc)
-	if err == mongo.ErrNoDocuments {
-		log.Fatalln("An attempt was made to retrieve the user that wan not inserted.")
-	}
-	if err != nil {
-		log.Panicln(err)
-	}
+	handleErr(err)
 	return &doc
 }
 
 func (db *DBHandler) Disconnect() {
 	if err := db.client.Disconnect(context.TODO()); err != nil {
+		log.Panicln(err)
+	}
+}
+
+func handleErr(err error) {
+	if err == mongo.ErrNoDocuments {
+		log.Panicln("An attempt was made to retrieve the user that wan not inserted.", err)
+	}
+	if err != nil {
 		log.Panicln(err)
 	}
 }
