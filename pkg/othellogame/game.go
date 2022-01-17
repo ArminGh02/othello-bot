@@ -185,6 +185,11 @@ func (g *Game) flipDisks(where coord.Coord) {
 func (g *Game) findDirectionsToFlip(where coord.Coord) []direction.Direction {
 	opponent := g.turn.Cell().Reversed()
 	res := make([]direction.Direction, 0, direction.COUNT)
+
+	if g.board[where.Y][where.X] != g.turn.Cell() {
+		return res
+	}
+
 	for i := direction.NORTH_WEST; i < direction.COUNT; i++ {
 		c := coord.Plus(where, offset[i])
 		if isValidCoord(c, len(g.board)) && g.board[c.Y][c.X] == opponent {
