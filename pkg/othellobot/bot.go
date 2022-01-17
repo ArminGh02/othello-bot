@@ -119,13 +119,7 @@ func (bot *Bot) showScoreboard(update tgbotapi.Update) {
 }
 
 func (bot *Bot) showProfile(update tgbotapi.Update) {
-	profile := bot.db.ProfileOf(update.SentFrom().ID)
-	msg := fmt.Sprintf("%s's Profile:\nWins: %d\nLosses: %d\nDraws: %d",
-		profile.Name,
-		profile.Wins,
-		profile.Losses,
-		profile.Draws,
-	)
+	msg := bot.db.ProfileOf(update.SentFrom().ID).String()
 	bot.api.Send(tgbotapi.NewMessage(update.FromChat().ID, msg))
 }
 
