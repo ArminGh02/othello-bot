@@ -25,6 +25,27 @@ func getGameMsg(game *othellogame.Game) string {
 	)
 }
 
+func getEditedMsgOfGame(
+	game *othellogame.Game,
+	query *tgbotapi.CallbackQuery,
+	chatID, userID int64,
+	showLegalMoves bool,
+) tgbotapi.Chattable {
+	if query.InlineMessageID != "" {
+		return getEditedMsgOfGameInline(
+			game,
+			query.InlineMessageID,
+			showLegalMoves,
+		)
+	}
+	return tgbotapi.NewEditMessageTextAndMarkup(
+		chatID,
+		query.Message.MessageID,
+		getGameMsg(game),
+		tgbotapi.InlineKeyboardMarkup{InlineKeyboard: game.InlineKeyboard(showLegalMoves)},
+	)
+}
+
 func getEditedMsgOfGameInline(
 	game *othellogame.Game,
 	inlineMessageID string,
@@ -38,20 +59,6 @@ func getEditedMsgOfGameInline(
 		},
 		Text: getGameMsg(game),
 	}
-}
-
-func getEditedMsgOfGame(
-	game *othellogame.Game,
-	chatID int64,
-	messageID int,
-	showLegalMoves bool,
-) tgbotapi.Chattable {
-	return tgbotapi.NewEditMessageTextAndMarkup(
-		chatID,
-		messageID,
-		getGameMsg(game),
-		tgbotapi.InlineKeyboardMarkup{InlineKeyboard: game.InlineKeyboard(showLegalMoves)},
-	)
 }
 
 func buildMainKeyboard() tgbotapi.ReplyKeyboardMarkup {

@@ -147,6 +147,8 @@ func (bot *Bot) handleCallbackQuery(update tgbotapi.Update) {
 		bot.playWithRandomOpponent(update)
 	case "join":
 		bot.startNewGameWithFriend(update)
+	case "toggleShowingLegalMoves":
+		bot.db.ToggleLegalMovesAreShown(update.SentFrom().ID)
 	}
 
 	bot.api.Request(tgbotapi.CallbackConfig{
@@ -194,22 +196,7 @@ func (bot *Bot) handleGameEnd(game *othellogame.Game, query *tgbotapi.CallbackQu
 }
 
 func (bot *Bot) handleRunningGame(game *othellogame.Game, query *tgbotapi.CallbackQuery, chatID, userID int64) {
-	var msg tgbotapi.Chattable
-	if query.InlineMessageID != "" {
-		msg = getEditedMsgOfGameInline(
-			game,
-			query.InlineMessageID,
-			bot.db.LegalMovesAreShown(userID),
-		)
-	} else {
-		msg = getEditedMsgOfGame(
-			game,
-			chatID,
-			query.Message.MessageID,
-			bot.db.LegalMovesAreShown(userID),
-		)
-	}
-	bot.api.Send(msg)
+	bot.api.Send(getEditedMsgOfGame(game, query, chatID, userID, bot.db.LegalMovesAreShown(userID)))
 	bot.api.Request(tgbotapi.NewCallback(query.ID, "Disk placed!"))
 }
 
