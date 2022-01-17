@@ -1,1 +1,1 @@
-worker: go run cmd/othellobot/main.go
+worker: bin/othellobot
