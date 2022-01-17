@@ -179,7 +179,8 @@ func (bot *Bot) placeDisk(update tgbotapi.Update) {
 	} else if game.IsEnded() {
 		bot.handleGameEnd(game, query)
 	} else {
-		bot.handleRunningGame(game, query, user.ID)
+		bot.api.Send(getEditedMsgOfGame(game, query, user.ID, bot.db.LegalMovesAreShown(user.ID)))
+		bot.api.Request(tgbotapi.NewCallback(query.ID, "Disk placed!"))
 	}
 }
 
@@ -193,11 +194,6 @@ func (bot *Bot) handleGameEnd(game *othellogame.Game, query *tgbotapi.CallbackQu
 		bot.db.IncrementLosses(loser.ID)
 	}
 	bot.api.Request(tgbotapi.NewCallback(query.ID, "Game is over!"))
-}
-
-func (bot *Bot) handleRunningGame(game *othellogame.Game, query *tgbotapi.CallbackQuery, userID int64) {
-	bot.api.Send(getEditedMsgOfGame(game, query, userID, bot.db.LegalMovesAreShown(userID)))
-	bot.api.Request(tgbotapi.NewCallback(query.ID, "Disk placed!"))
 }
 
 func (bot *Bot) startNewGameWithFriend(update tgbotapi.Update) {
