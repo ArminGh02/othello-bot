@@ -121,8 +121,8 @@ func buildGameModeKeyboard() tgbotapi.InlineKeyboardMarkup {
 }
 
 func buildJoinToGameKeyboard() *tgbotapi.InlineKeyboardMarkup {
-	keyboard := [][]tgbotapi.InlineKeyboardButton{{tgbotapi.NewInlineKeyboardButtonData("Join", "join")}}
-	return &tgbotapi.InlineKeyboardMarkup{
-		InlineKeyboard: keyboard,
-	}
+	keyboard := tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Join", "join")),
+	)
+	return &keyboard
 }
