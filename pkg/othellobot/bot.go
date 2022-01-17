@@ -243,9 +243,7 @@ func (bot *Bot) playWithRandomOpponent(update tgbotapi.Update) {
 	bot.usersToCurrentGamesMutex.Unlock()
 
 	msg := tgbotapi.NewMessage(update.FromChat().ID, getGameMsg(game))
-	msg.ReplyMarkup = &tgbotapi.InlineKeyboardMarkup{
-		InlineKeyboard: game.InlineKeyboard(bot.db.LegalMovesAreShown(game.ActiveUser().ID)),
-	}
+	msg.ReplyMarkup = buildGameKeyboard(game, bot.db.LegalMovesAreShown(game.ActiveUser().ID))
 
 	bot.api.Send(msg)
 }

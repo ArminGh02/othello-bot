@@ -42,7 +42,7 @@ func getEditedMsgOfGame(
 		query.Message.Chat.ID,
 		query.Message.MessageID,
 		getGameMsg(game),
-		tgbotapi.InlineKeyboardMarkup{InlineKeyboard: game.InlineKeyboard(showLegalMoves)},
+		buildGameKeyboard(game, showLegalMoves),
 	)
 }
 
@@ -51,7 +51,7 @@ func getEditedMsgOfGameInline(
 	inlineMessageID string,
 	showLegalMoves bool,
 ) tgbotapi.Chattable {
-	replyMarkup := tgbotapi.InlineKeyboardMarkup{InlineKeyboard: game.InlineKeyboard(showLegalMoves)}
+	replyMarkup := buildGameKeyboard(game, showLegalMoves)
 	return tgbotapi.EditMessageTextConfig{
 		BaseEdit: tgbotapi.BaseEdit{
 			InlineMessageID: inlineMessageID,
