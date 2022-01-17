@@ -58,10 +58,7 @@ func (db *DBHandler) AddPlayer(userID int64, name string) {
 }
 
 func (db *DBHandler) LegalMovesAreShown(userID int64) bool {
-	var doc PlayerDoc
-	err := db.coll.FindOne(context.TODO(), bson.D{{"user_id", userID}}).Decode(&doc)
-	handleErr(err)
-	return doc.LegalMovesAreShown
+	return db.ProfileOf(userID).LegalMovesAreShown
 }
 
 func (db *DBHandler) ToggleLegalMovesAreShown(userID int64) {
