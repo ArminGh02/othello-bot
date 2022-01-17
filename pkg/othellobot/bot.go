@@ -142,11 +142,11 @@ func (bot *Bot) handleCallbackQuery(query *tgbotapi.CallbackQuery) {
 		bot.playWithRandomOpponent(query)
 	case "toggleShowingLegalMoves":
 		bot.toggleShowingLegalMoves(query)
+	case "whiteProfile":
+		bot.alertProfile(true, query)
+	case "blackProfile":
+		bot.alertProfile(false, query)
 	}
-
-	bot.api.Request(tgbotapi.CallbackConfig{
-		CallbackQueryID: query.ID,
-	})
 }
 
 func (bot *Bot) placeDisk(query *tgbotapi.CallbackQuery) {
@@ -210,6 +210,9 @@ func (bot *Bot) startNewGameWithFriend(query *tgbotapi.CallbackQuery) {
 		query.InlineMessageID,
 		bot.db.LegalMovesAreShown(game.ActiveUser().ID),
 	))
+	bot.api.Request(tgbotapi.CallbackConfig{
+		CallbackQueryID: query.ID,
+	})
 }
 
 func (bot *Bot) playWithRandomOpponent(query *tgbotapi.CallbackQuery) {
@@ -235,6 +238,9 @@ func (bot *Bot) playWithRandomOpponent(query *tgbotapi.CallbackQuery) {
 	msg.ReplyMarkup = buildGameKeyboard(game, bot.db.LegalMovesAreShown(game.ActiveUser().ID))
 
 	bot.api.Send(msg)
+	bot.api.Request(tgbotapi.CallbackConfig{
+		CallbackQueryID: query.ID,
+	})
 }
 
 func (bot *Bot) toggleShowingLegalMoves(query *tgbotapi.CallbackQuery) {
@@ -249,7 +255,27 @@ func (bot *Bot) toggleShowingLegalMoves(query *tgbotapi.CallbackQuery) {
 	}
 
 	bot.db.ToggleLegalMovesAreShown(user.ID)
+
 	bot.api.Send(getEditedMsgOfGame(game, query, user.ID, bot.db.LegalMovesAreShown(user.ID)))
+	bot.api.Request(tgbotapi.CallbackConfig{
+		CallbackQueryID: query.ID,
+	})
+}
+
+func (bot *Bot) alertProfile(white bool, query *tgbotapi.CallbackQuery) {
+	bot.usersToCurrentGamesMutex.Lock()
+	defer bot.inlineMessageIDsToUsersMutex.Unlock()
+
+	game := bot.usersToCurrentGames[*query.From]
+
+	var userID int64
+	if white {
+		userID = game.WhiteUser().ID
+	} else {
+		userID = game.BlackUser().ID
+	}
+
+	bot.api.Request(tgbotapi.NewCallbackWithAlert(query.ID, bot.db.ProfileOf(userID).String()))
 }
 
 func (bot *Bot) handleInlineQuery(inlineQuery *tgbotapi.InlineQuery) {
