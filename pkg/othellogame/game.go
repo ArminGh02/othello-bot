@@ -172,7 +172,7 @@ func (g *Game) checkPlacingDisk(where coord.Coord, user *tgbotapi.User) error {
 
 func (g *Game) flipDisks(where coord.Coord) {
 	opponent := g.turn.Cell().Reversed()
-	directionsToFlip := g.findDirectionsToFlip(where)
+	directionsToFlip := g.findDirectionsToFlip(where, false)
 	for _, dir := range directionsToFlip {
 		for c := coord.Plus(where, offset[dir]); g.board[c.Y][c.X] == opponent; c.Plus(offset[dir]) {
 			g.board[c.Y][c.X] = g.turn.Cell()
@@ -181,11 +181,11 @@ func (g *Game) flipDisks(where coord.Coord) {
 	g.updateDisksCount()
 }
 
-func (g *Game) findDirectionsToFlip(where coord.Coord) []direction.Direction {
+func (g *Game) findDirectionsToFlip(where coord.Coord, mustBeEmptyCell bool) []direction.Direction {
 	opponent := g.turn.Cell().Reversed()
 	res := make([]direction.Direction, 0, direction.COUNT)
 
-	if g.board[where.Y][where.X] != cell.EMPTY {
+	if mustBeEmptyCell && g.board[where.Y][where.X] != cell.EMPTY {
 		return res
 	}
 
@@ -233,7 +233,7 @@ func (g *Game) updatePlaceableCoords() {
 }
 
 func (g *Game) isPlaceableCoord(where coord.Coord) bool {
-	return len(g.findDirectionsToFlip(where)) > 0
+	return len(g.findDirectionsToFlip(where, true)) > 0
 }
 
 func (g *Game) updateDisksCount() {
