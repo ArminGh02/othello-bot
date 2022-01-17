@@ -148,8 +148,6 @@ func (g *Game) PlaceDisk(where coord.Coord, user *tgbotapi.User) error {
 
 	if g.placeableCoords.IsEmpty() {
 		g.ended = true
-	} else {
-		g.updateDisksCount()
 	}
 
 	return nil
@@ -180,6 +178,7 @@ func (g *Game) flipDisks(where coord.Coord) {
 			g.board[c.Y][c.X] = g.turn.Cell()
 		}
 	}
+	g.updateDisksCount()
 }
 
 func (g *Game) findDirectionsToFlip(where coord.Coord) []direction.Direction {
