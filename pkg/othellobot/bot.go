@@ -57,9 +57,9 @@ func (bot *Bot) Run() {
 func (bot *Bot) handleUpdate(update tgbotapi.Update) {
 	switch {
 	case update.Message != nil:
-		bot.handleMessage(update)
+		bot.handleMessage(update.Message)
 	case update.CallbackQuery != nil:
-		bot.handleCallbackQuery(update)
+		bot.handleCallbackQuery(update.CallbackQuery)
 	case update.InlineQuery != nil:
 		bot.handleInlineQuery(update.InlineQuery)
 	case update.ChosenInlineResult != nil:
@@ -67,33 +67,33 @@ func (bot *Bot) handleUpdate(update tgbotapi.Update) {
 	}
 }
 
-func (bot *Bot) handleMessage(update tgbotapi.Update) {
-	if update.Message.IsCommand() {
-		bot.handleCommand(update)
+func (bot *Bot) handleMessage(message *tgbotapi.Message) {
+	if message.IsCommand() {
+		bot.handleCommand(message)
 		return
 	}
-	switch update.Message.Text {
+	switch message.Text {
 	case NEW_GAME_BUTTON_TEXT:
-		bot.askGameMode(update)
+		bot.askGameMode(message)
 	case SCOREBOARD_BUTTON_TEXT:
-		bot.showScoreboard(update)
+		bot.showScoreboard(message)
 	case PROFILE_BUTTON_TEXT:
-		bot.showProfile(update)
+		bot.showProfile(message)
 	case HELP_BUTTON_TEXT:
-		bot.showHelp(update)
+		bot.showHelp(message)
 	}
 }
 
-func (bot *Bot) handleCommand(update tgbotapi.Update) {
-	switch command := update.Message.Command(); command {
+func (bot *Bot) handleCommand(message *tgbotapi.Message) {
+	switch command := message.Command(); command {
 	case "start":
-		user := update.SentFrom()
+		user := message.From
 
 		msgText := fmt.Sprintf("Hi %s\\!\n"+
 			"I am *Othello Bot*\\.\n"+
 			"Have fun playing Othello strategic board game,\n"+
 			"with your friends or opponents around the world\\!", user.FirstName)
-		msg := tgbotapi.NewMessage(update.FromChat().ID, msgText)
+		msg := tgbotapi.NewMessage(message.Chat.ID, msgText)
 		msg.ReplyMarkup = buildMainKeyboard()
 		msg.ParseMode = "MarkdownV2"
 		bot.api.Send(msg)
@@ -101,46 +101,45 @@ func (bot *Bot) handleCommand(update tgbotapi.Update) {
 		bot.db.AddPlayer(user.ID, getFullNameOf(user))
 	default:
 		msgText := fmt.Sprintf("Sorry! %s is not recognized as a command.", command)
-		bot.api.Send(tgbotapi.NewMessage(update.FromChat().ID, msgText))
+		bot.api.Send(tgbotapi.NewMessage(message.Chat.ID, msgText))
 	}
 }
 
-func (bot *Bot) askGameMode(update tgbotapi.Update) {
+func (bot *Bot) askGameMode(message *tgbotapi.Message) {
 	msgText := "You can play Othello with opponents around the world,\n" +
 		"or play with your friends in chats!"
-	msg := tgbotapi.NewMessage(update.FromChat().ID, msgText)
+	msg := tgbotapi.NewMessage(message.Chat.ID, msgText)
 	msg.ReplyMarkup = buildGameModeKeyboard()
 	bot.api.Send(msg)
 }
 
-func (bot *Bot) showScoreboard(update tgbotapi.Update) {
+func (bot *Bot) showScoreboard(message *tgbotapi.Message) {
 	// TODO: implement
-	bot.api.Send(tgbotapi.NewMessage(update.FromChat().ID, "Not implemented yet!"))
+	bot.api.Send(tgbotapi.NewMessage(message.Chat.ID, "Not implemented yet!"))
 }
 
-func (bot *Bot) showProfile(update tgbotapi.Update) {
-	msg := bot.db.ProfileOf(update.SentFrom().ID).String()
-	bot.api.Send(tgbotapi.NewMessage(update.FromChat().ID, msg))
+func (bot *Bot) showProfile(message *tgbotapi.Message) {
+	msg := bot.db.ProfileOf(message.From.ID).String()
+	bot.api.Send(tgbotapi.NewMessage(message.Chat.ID, msg))
 }
 
-func (bot *Bot) showHelp(update tgbotapi.Update) {
-	bot.api.Send(tgbotapi.NewMessage(update.FromChat().ID, HELP_MSG))
+func (bot *Bot) showHelp(message *tgbotapi.Message) {
+	bot.api.Send(tgbotapi.NewMessage(message.Chat.ID, HELP_MSG))
 }
 
-func (bot *Bot) handleCallbackQuery(update tgbotapi.Update) {
-	query := update.CallbackQuery
+func (bot *Bot) handleCallbackQuery(query *tgbotapi.CallbackQuery) {
 	data := query.Data
 
 	if match, _ := regexp.MatchString("^\\d+_\\d+$", data); match {
-		bot.placeDisk(update)
+		bot.placeDisk(query)
 		return
 	}
 
 	switch data {
 	case "join":
-		bot.startNewGameWithFriend(update)
+		bot.startNewGameWithFriend(query)
 	case "playWithRandomOpponent":
-		bot.playWithRandomOpponent(update)
+		bot.playWithRandomOpponent(query)
 	case "toggleShowingLegalMoves":
 		bot.toggleShowingLegalMoves(query)
 	}
@@ -150,8 +149,7 @@ func (bot *Bot) handleCallbackQuery(update tgbotapi.Update) {
 	})
 }
 
-func (bot *Bot) placeDisk(update tgbotapi.Update) {
-	query := update.CallbackQuery
+func (bot *Bot) placeDisk(query *tgbotapi.CallbackQuery) {
 	user := query.From
 
 	bot.usersToCurrentGamesMutex.Lock()
@@ -190,9 +188,7 @@ func (bot *Bot) handleGameEnd(game *othellogame.Game, query *tgbotapi.CallbackQu
 	bot.api.Request(tgbotapi.NewCallback(query.ID, "Game is over!"))
 }
 
-func (bot *Bot) startNewGameWithFriend(update tgbotapi.Update) {
-	query := update.CallbackQuery
-
+func (bot *Bot) startNewGameWithFriend(query *tgbotapi.CallbackQuery) {
 	bot.inlineMessageIDsToUsersMutex.Lock()
 	user1, ok := bot.inlineMessageIDsToUsers[query.InlineMessageID]
 	if !ok {
@@ -218,14 +214,14 @@ func (bot *Bot) startNewGameWithFriend(update tgbotapi.Update) {
 	))
 }
 
-func (bot *Bot) playWithRandomOpponent(update tgbotapi.Update) {
+func (bot *Bot) playWithRandomOpponent(query *tgbotapi.CallbackQuery) {
 	if len(bot.waitingPlayer) == 0 {
-		bot.waitingPlayer <- update.SentFrom()
+		bot.waitingPlayer <- query.From
 		return
 	}
 
 	user1 := <-bot.waitingPlayer
-	user2 := update.SentFrom()
+	user2 := query.From
 
 	game := othellogame.New(user1, user2)
 
@@ -236,7 +232,7 @@ func (bot *Bot) playWithRandomOpponent(update tgbotapi.Update) {
 	bot.usersToCurrentGames[*user2] = game
 	bot.usersToCurrentGamesMutex.Unlock()
 
-	msg := tgbotapi.NewMessage(update.FromChat().ID, getGameMsg(game))
+	msg := tgbotapi.NewMessage(query.Message.Chat.ID, getGameMsg(game))
 	msg.ReplyMarkup = buildGameKeyboard(game, bot.db.LegalMovesAreShown(game.ActiveUser().ID))
 
 	bot.api.Send(msg)
