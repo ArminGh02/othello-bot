@@ -148,7 +148,7 @@ func (bot *Bot) handleCallbackQuery(update tgbotapi.Update) {
 	case "join":
 		bot.startNewGameWithFriend(update)
 	case "toggleShowingLegalMoves":
-		bot.db.ToggleLegalMovesAreShown(update.SentFrom().ID)
+		bot.toggleShowingLegalMoves(query)
 	}
 
 	bot.api.Request(tgbotapi.CallbackConfig{
@@ -252,6 +252,20 @@ func (bot *Bot) playWithRandomOpponent(update tgbotapi.Update) {
 	}
 
 	bot.api.Send(msg)
+}
+
+func (bot *Bot) toggleShowingLegalMoves(query *tgbotapi.CallbackQuery) {
+	user := query.From
+
+	bot.usersToCurrentGamesMutex.Lock()
+	game, ok := bot.usersToCurrentGames[*user]
+	if !ok {
+		log.Panicf("Invalid state: usersToCurrentGames does not contain %v\n", user)
+	}
+	bot.usersToCurrentGamesMutex.Unlock()
+
+	bot.db.ToggleLegalMovesAreShown(user.ID)
+	bot.api.Send(getEditedMsgOfGame(game, query, user.ID, bot.db.LegalMovesAreShown(user.ID)))
 }
 
 func (bot *Bot) handleInlineQuery(inlineQuery *tgbotapi.InlineQuery) {
