@@ -63,16 +63,34 @@ func getEditedMsgOfGameInline(
 
 func buildGameKeyboard(game *othellogame.Game, showLegalMoves bool) tgbotapi.InlineKeyboardMarkup {
 	keyboard := game.InlineKeyboard(showLegalMoves)
+
+	whiteProfile := fmt.Sprintf("%s%s: %d",
+		consts.WHITE_DISK_EMOJI,
+		game.WhiteUser().FirstName,
+		game.WhiteDisks(),
+	)
+	blackProfile := fmt.Sprintf("%s%s: %d",
+		consts.BLACK_DISK_EMOJI,
+		game.BlackUser().FirstName,
+		game.BlackDisks(),
+	)
+	row := tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData(whiteProfile, "whiteProfile"),
+		tgbotapi.NewInlineKeyboardButtonData(blackProfile, "blackProfile"),
+	)
+	keyboard = append(keyboard, row)
+
 	var buttonText string
 	if showLegalMoves {
 		buttonText = "Hide legal moves"
 	} else {
 		buttonText = "Show legal moves"
 	}
-	row := tgbotapi.NewInlineKeyboardRow(
+	row = tgbotapi.NewInlineKeyboardRow(
 		tgbotapi.NewInlineKeyboardButtonData(buttonText, "toggleShowingLegalMoves"),
 	)
 	keyboard = append(keyboard, row)
+
 	return tgbotapi.InlineKeyboardMarkup{
 		InlineKeyboard: keyboard,
 	}
