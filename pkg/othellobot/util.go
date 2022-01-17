@@ -28,7 +28,7 @@ func getGameMsg(game *othellogame.Game) string {
 func getEditedMsgOfGame(
 	game *othellogame.Game,
 	query *tgbotapi.CallbackQuery,
-	chatID, userID int64,
+	userID int64,
 	showLegalMoves bool,
 ) tgbotapi.Chattable {
 	if query.InlineMessageID != "" {
@@ -39,7 +39,7 @@ func getEditedMsgOfGame(
 		)
 	}
 	return tgbotapi.NewEditMessageTextAndMarkup(
-		chatID,
+		query.Message.Chat.ID,
 		query.Message.MessageID,
 		getGameMsg(game),
 		tgbotapi.InlineKeyboardMarkup{InlineKeyboard: game.InlineKeyboard(showLegalMoves)},
