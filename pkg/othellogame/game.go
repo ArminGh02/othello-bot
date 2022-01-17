@@ -186,7 +186,7 @@ func (g *Game) findDirectionsToFlip(where coord.Coord) []direction.Direction {
 	opponent := g.turn.Cell().Reversed()
 	res := make([]direction.Direction, 0, direction.COUNT)
 
-	if g.board[where.Y][where.X] != g.turn.Cell() {
+	if g.board[where.Y][where.X] != cell.EMPTY {
 		return res
 	}
 
