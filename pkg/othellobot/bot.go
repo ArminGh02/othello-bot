@@ -143,10 +143,10 @@ func (bot *Bot) handleCallbackQuery(update tgbotapi.Update) {
 	}
 
 	switch data {
-	case "playWithRandomOpponent":
-		bot.playWithRandomOpponent(update)
 	case "join":
 		bot.startNewGameWithFriend(update)
+	case "playWithRandomOpponent":
+		bot.playWithRandomOpponent(update)
 	case "toggleShowingLegalMoves":
 		bot.toggleShowingLegalMoves(query)
 	}
