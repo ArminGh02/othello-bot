@@ -153,6 +153,7 @@ func (bot *Bot) placeDisk(query *tgbotapi.CallbackQuery) {
 	user := query.From
 
 	bot.usersToCurrentGamesMutex.Lock()
+	defer bot.usersToCurrentGamesMutex.Unlock()
 
 	game, ok := bot.usersToCurrentGames[*user]
 	if !ok {
@@ -163,9 +164,6 @@ func (bot *Bot) placeDisk(query *tgbotapi.CallbackQuery) {
 	fmt.Sscanf(query.Data, "%d_%d", &where.X, &where.Y)
 
 	err := game.PlaceDisk(where, user)
-
-	bot.usersToCurrentGamesMutex.Unlock()
-
 	if err != nil {
 		bot.api.Request(tgbotapi.NewCallback(query.ID, err.Error()))
 	} else if game.IsEnded() {
@@ -228,9 +226,10 @@ func (bot *Bot) playWithRandomOpponent(query *tgbotapi.CallbackQuery) {
 	log.Printf("Started %s\n", game)
 
 	bot.usersToCurrentGamesMutex.Lock()
+	defer bot.usersToCurrentGamesMutex.Unlock()
+
 	bot.usersToCurrentGames[*user1] = game
 	bot.usersToCurrentGames[*user2] = game
-	bot.usersToCurrentGamesMutex.Unlock()
 
 	msg := tgbotapi.NewMessage(query.Message.Chat.ID, getGameMsg(game))
 	msg.ReplyMarkup = buildGameKeyboard(game, bot.db.LegalMovesAreShown(game.ActiveUser().ID))
@@ -242,11 +241,12 @@ func (bot *Bot) toggleShowingLegalMoves(query *tgbotapi.CallbackQuery) {
 	user := query.From
 
 	bot.usersToCurrentGamesMutex.Lock()
+	defer bot.usersToCurrentGamesMutex.Unlock()
+
 	game, ok := bot.usersToCurrentGames[*user]
 	if !ok {
 		log.Panicf("Invalid state: usersToCurrentGames does not contain %v\n", user)
 	}
-	bot.usersToCurrentGamesMutex.Unlock()
 
 	bot.db.ToggleLegalMovesAreShown(user.ID)
 	bot.api.Send(getEditedMsgOfGame(game, query, user.ID, bot.db.LegalMovesAreShown(user.ID)))
