@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -27,6 +28,15 @@ func newPlayerDoc(userID int64, name string, wins, losses, draws int, legalMoves
 		Draws:              draws,
 		LegalMovesAreShown: legalMovesAreShown,
 	}
+}
+
+func (doc *PlayerDoc) String() string {
+	return fmt.Sprintf("%s's Profile:\nWins: %d\nLosses: %d\nDraws: %d",
+		doc.Name,
+		doc.Wins,
+		doc.Losses,
+		doc.Draws,
+	)
 }
 
 type DBHandler struct {
