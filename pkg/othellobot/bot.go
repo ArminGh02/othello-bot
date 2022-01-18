@@ -264,7 +264,7 @@ func (bot *Bot) toggleShowingLegalMoves(query *tgbotapi.CallbackQuery) {
 
 func (bot *Bot) alertProfile(white bool, query *tgbotapi.CallbackQuery) {
 	bot.usersToCurrentGamesMutex.Lock()
-	defer bot.inlineMessageIDsToUsersMutex.Unlock()
+	defer bot.usersToCurrentGamesMutex.Unlock()
 
 	game := bot.usersToCurrentGames[*query.From]
 
