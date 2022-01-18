@@ -201,9 +201,10 @@ func (bot *Bot) startNewGameWithFriend(query *tgbotapi.CallbackQuery) {
 	log.Printf("Started %s\n", game)
 
 	bot.usersToCurrentGamesMutex.Lock()
+	defer bot.usersToCurrentGamesMutex.Unlock()
+
 	bot.usersToCurrentGames[*user1] = game
 	bot.usersToCurrentGames[*user2] = game
-	bot.usersToCurrentGamesMutex.Unlock()
 
 	bot.api.Send(getEditedMsgOfGameInline(
 		game,
