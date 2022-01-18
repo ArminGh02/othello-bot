@@ -39,6 +39,10 @@ func (doc *PlayerDoc) String() string {
 	)
 }
 
+func (doc *PlayerDoc) Score() int {
+	return doc.Wins * 3 - doc.Losses
+}
+
 type DBHandler struct {
 	client *mongo.Client
 	coll   *mongo.Collection
