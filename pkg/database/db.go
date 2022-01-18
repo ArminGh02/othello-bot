@@ -74,9 +74,7 @@ func (db *DBHandler) LegalMovesAreShown(userID int64) bool {
 func (db *DBHandler) ToggleLegalMovesAreShown(userID int64) {
 	update := bson.D{
 		{"$set", bson.D{
-			{"legal_moves_are_shown", bson.D{
-				{"$not", "$legal_moves_are_shown"},
-			}},
+			{"legal_moves_are_shown", !db.LegalMovesAreShown(userID)},
 		}},
 	}
 	_, err := db.coll.UpdateOne(context.TODO(), bson.D{{"user_id", userID}}, update)
