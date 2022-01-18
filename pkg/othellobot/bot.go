@@ -293,6 +293,7 @@ func (bot *Bot) handleInlineQuery(inlineQuery *tgbotapi.InlineQuery) {
 	bot.api.Request(tgbotapi.InlineConfig{
 		InlineQueryID: inlineQuery.ID,
 		Results:       []interface{}{game},
+		CacheTime:     0,
 	})
 }
 
