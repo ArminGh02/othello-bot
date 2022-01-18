@@ -67,6 +67,21 @@ func (db *DBHandler) AddPlayer(userID int64, name string) {
 	}
 }
 
+func (db *DBHandler) GetAllPlayers() []PlayerDoc {
+	res := make([]PlayerDoc, 0)
+	cur, err := db.coll.Find(context.TODO(), bson.D{})
+	handleErr(err)
+	for cur.Next(context.TODO()) {
+		var doc PlayerDoc
+		err := cur.Decode(&doc)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		res = append(res, doc)
+	}
+	return res
+}
+
 func (db *DBHandler) LegalMovesAreShown(userID int64) bool {
 	return db.ProfileOf(userID).LegalMovesAreShown
 }
