@@ -69,6 +69,11 @@ func (s *Scoreboard) UpdateRankOf(userID int64) {
 
 }
 
-func (s *Scoreboard) RankOf(userID int64) {
-
+func (s *Scoreboard) RankOf(userID int64) int {
+	for i, player := range s.scoreboard {
+		if player.UserID == userID {
+			return i + 1
+		}
+	}
+	panic("An attempt was made to retrieve the rank of a user that was not inserted into scoreboard.")
 }
