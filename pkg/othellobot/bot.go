@@ -124,7 +124,7 @@ func (bot *Bot) showScoreboard(message *tgbotapi.Message) {
 }
 
 func (bot *Bot) showProfile(message *tgbotapi.Message) {
-	msg := bot.db.ProfileOf(message.From.ID).String()
+	msg := bot.db.ProfileOf(message.From.ID).String(bot.scoreboard.RankOf(message.From.ID))
 	bot.api.Send(tgbotapi.NewMessage(message.Chat.ID, msg))
 }
 
@@ -283,7 +283,9 @@ func (bot *Bot) alertProfile(white bool, query *tgbotapi.CallbackQuery) {
 		userID = game.BlackUser().ID
 	}
 
-	bot.api.Request(tgbotapi.NewCallbackWithAlert(query.ID, bot.db.ProfileOf(userID).String()))
+	rank := bot.scoreboard.RankOf(userID)
+
+	bot.api.Request(tgbotapi.NewCallbackWithAlert(query.ID, bot.db.ProfileOf(userID).String(rank)))
 }
 
 func (bot *Bot) handleInlineQuery(inlineQuery *tgbotapi.InlineQuery) {

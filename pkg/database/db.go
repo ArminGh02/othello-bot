@@ -30,9 +30,10 @@ func newPlayerDoc(userID int64, name string, wins, losses, draws int, legalMoves
 	}
 }
 
-func (doc *PlayerDoc) String() string {
-	return fmt.Sprintf("%s's Profile:\nWins: %d\nLosses: %d\nDraws: %d",
+func (doc *PlayerDoc) String(rank int) string {
+	return fmt.Sprintf("%s's Profile:\nRank: %d\nWins: %d\nLosses: %d\nDraws: %d",
 		doc.Name,
+		rank,
 		doc.Wins,
 		doc.Losses,
 		doc.Draws,
