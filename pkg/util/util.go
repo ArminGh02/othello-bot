@@ -65,8 +65,22 @@ func (s *Scoreboard) Insert(player *database.PlayerDoc) {
 
 }
 
-func (s *Scoreboard) UpdateRankOf(userID int64) {
+func (s *Scoreboard) UpdateRankOf(userID int64, winsDelta, lossesDelta int) {
+	i := s.RankOf(userID) - 1
+	player := &s.scoreboard[i]
 
+	player.Wins += winsDelta
+	player.Losses += lossesDelta
+
+	score := player.Score()
+
+	for ; i-1 >= 0 && score > s.scoreboard[i-1].Score(); i-- {
+		s.scoreboard[i], s.scoreboard[i-1] = s.scoreboard[i-1], s.scoreboard[i]
+	}
+
+	for ; i+1 < len(s.scoreboard) && score < s.scoreboard[i+1].Score(); i++ {
+		s.scoreboard[i], s.scoreboard[i+1] = s.scoreboard[i+1], s.scoreboard[i]
+	}
 }
 
 func (s *Scoreboard) RankOf(userID int64) int {
