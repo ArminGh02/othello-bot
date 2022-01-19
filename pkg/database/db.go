@@ -93,7 +93,7 @@ func (db *DBHandler) GetAllPlayers() []PlayerDoc {
 }
 
 func (db *DBHandler) LegalMovesAreShown(userID int64) bool {
-	return db.ProfileOf(userID).LegalMovesAreShown
+	return db.Find(userID).LegalMovesAreShown
 }
 
 func (db *DBHandler) ToggleLegalMovesAreShown(userID int64) {
@@ -128,7 +128,7 @@ func (db *DBHandler) incrementProperty(propertyName string, userID int64) {
 	handleErr(err)
 }
 
-func (db *DBHandler) ProfileOf(userID int64) *PlayerDoc {
+func (db *DBHandler) Find(userID int64) *PlayerDoc {
 	var doc PlayerDoc
 	err := db.coll.FindOne(context.TODO(), bson.D{{"user_id", userID}}).Decode(&doc)
 	handleErr(err)

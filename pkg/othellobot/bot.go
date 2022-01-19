@@ -103,7 +103,7 @@ func (bot *Bot) handleCommand(message *tgbotapi.Message) {
 		bot.api.Send(msg)
 
 		bot.db.AddPlayer(user.ID, getFullNameOf(user))
-		bot.scoreboard.Insert(bot.db.ProfileOf(user.ID))
+		bot.scoreboard.Insert(bot.db.Find(user.ID))
 	default:
 		msgText := fmt.Sprintf("Sorry! %s is not recognized as a command.", command)
 		bot.api.Send(tgbotapi.NewMessage(message.Chat.ID, msgText))
@@ -124,7 +124,7 @@ func (bot *Bot) showScoreboard(message *tgbotapi.Message) {
 }
 
 func (bot *Bot) showProfile(message *tgbotapi.Message) {
-	msg := bot.db.ProfileOf(message.From.ID).String(bot.scoreboard.RankOf(message.From.ID))
+	msg := bot.db.Find(message.From.ID).String(bot.scoreboard.RankOf(message.From.ID))
 	bot.api.Send(tgbotapi.NewMessage(message.Chat.ID, msg))
 }
 
@@ -285,7 +285,7 @@ func (bot *Bot) alertProfile(white bool, query *tgbotapi.CallbackQuery) {
 
 	rank := bot.scoreboard.RankOf(userID)
 
-	bot.api.Request(tgbotapi.NewCallbackWithAlert(query.ID, bot.db.ProfileOf(userID).String(rank)))
+	bot.api.Request(tgbotapi.NewCallbackWithAlert(query.ID, bot.db.Find(userID).String(rank)))
 }
 
 func (bot *Bot) handleInlineQuery(inlineQuery *tgbotapi.InlineQuery) {
