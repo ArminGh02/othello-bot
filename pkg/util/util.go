@@ -62,7 +62,13 @@ func NewScoreboard(players []database.PlayerDoc) Scoreboard {
 }
 
 func (s *Scoreboard) Insert(player *database.PlayerDoc) {
-
+	score := player.Score()
+	i := len(s.scoreboard)
+	for i-1 >= 0 && score > s.scoreboard[i-1].Score() {
+		i--
+	}
+	s.scoreboard = append(s.scoreboard[:i+1], s.scoreboard[i:]...)
+	s.scoreboard[i] = *player
 }
 
 func (s *Scoreboard) UpdateRankOf(userID int64, winsDelta, lossesDelta int) {
