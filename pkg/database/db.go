@@ -64,8 +64,13 @@ func New(uri string) *DBHandler {
 }
 
 func (db *DBHandler) AddPlayer(userID int64, name string) {
+	err := db.coll.FindOne(context.TODO(), bson.D{{"user_id", userID}}).Err()
+	if err != mongo.ErrNoDocuments {
+		return
+	}
+
 	doc := newPlayerDoc(userID, name, 0, 0, 0, true)
-	_, err := db.coll.InsertOne(context.TODO(), doc)
+	_, err = db.coll.InsertOne(context.TODO(), doc)
 	if err != nil {
 		log.Panicln(err)
 	}
