@@ -8,6 +8,7 @@ import (
 
 	"github.com/ArminGh02/othello-bot/pkg/database"
 	"github.com/ArminGh02/othello-bot/pkg/othellogame"
+	"github.com/ArminGh02/othello-bot/pkg/util"
 	"github.com/ArminGh02/othello-bot/pkg/util/coord"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/google/uuid"
@@ -17,6 +18,7 @@ type Bot struct {
 	token                        string
 	api                          *tgbotapi.BotAPI
 	db                           *database.DBHandler
+	scoreboard                   util.Scoreboard
 	inlineMessageIDsToUsers      map[string]*tgbotapi.User
 	inlineMessageIDsToUsersMutex sync.Mutex
 	usersToCurrentGames          map[tgbotapi.User]*othellogame.Game
@@ -25,9 +27,11 @@ type Bot struct {
 }
 
 func New(token string, mongodbURI string) *Bot {
+	db := database.New(mongodbURI)
 	return &Bot{
-		db:                      database.New(mongodbURI),
 		token:                   token,
+		db:                      db,
+		scoreboard:              util.NewScoreboard(db.GetAllPlayers()),
 		usersToCurrentGames:     make(map[tgbotapi.User]*othellogame.Game),
 		inlineMessageIDsToUsers: make(map[string]*tgbotapi.User),
 		waitingPlayer:           make(chan *tgbotapi.User, 1),
@@ -99,6 +103,7 @@ func (bot *Bot) handleCommand(message *tgbotapi.Message) {
 		bot.api.Send(msg)
 
 		bot.db.AddPlayer(user.ID, getFullNameOf(user))
+		bot.scoreboard.Insert(bot.db.ProfileOf(user.ID))
 	default:
 		msgText := fmt.Sprintf("Sorry! %s is not recognized as a command.", command)
 		bot.api.Send(tgbotapi.NewMessage(message.Chat.ID, msgText))
@@ -182,6 +187,8 @@ func (bot *Bot) handleGameEnd(game *othellogame.Game, query *tgbotapi.CallbackQu
 	} else {
 		bot.db.IncrementWins(winner.ID)
 		bot.db.IncrementLosses(loser.ID)
+		bot.scoreboard.UpdateRankOf(winner.ID, 1, 0)
+		bot.scoreboard.UpdateRankOf(loser.ID, 0, 1)
 	}
 	bot.api.Request(tgbotapi.NewCallback(query.ID, "Game is over!"))
 }
