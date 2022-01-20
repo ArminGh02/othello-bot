@@ -2,6 +2,7 @@ package util
 
 import (
 	"sort"
+	"sync"
 
 	"github.com/ArminGh02/othello-bot/pkg/database"
 	"github.com/ArminGh02/othello-bot/pkg/util/coord"
@@ -52,6 +53,7 @@ func (b byScore) Less(i, j int) bool {
 
 type Scoreboard struct {
 	scoreboard []database.PlayerDoc
+	mu         sync.Mutex
 }
 
 func NewScoreboard(players []database.PlayerDoc) Scoreboard {
@@ -62,6 +64,8 @@ func NewScoreboard(players []database.PlayerDoc) Scoreboard {
 }
 
 func (s *Scoreboard) Insert(player *database.PlayerDoc) {
+	s.mu.Lock()
+
 	score := player.Score()
 	i := len(s.scoreboard)
 	for i-1 >= 0 && score > s.scoreboard[i-1].Score() {
@@ -69,9 +73,13 @@ func (s *Scoreboard) Insert(player *database.PlayerDoc) {
 	}
 	s.scoreboard = append(s.scoreboard[:i+1], s.scoreboard[i:]...)
 	s.scoreboard[i] = *player
+
+	s.mu.Unlock()
 }
 
 func (s *Scoreboard) UpdateRankOf(userID int64, winsDelta, lossesDelta int) {
+	s.mu.Lock()
+
 	i := s.indexOf(userID)
 	player := &s.scoreboard[i]
 
@@ -87,6 +95,8 @@ func (s *Scoreboard) UpdateRankOf(userID int64, winsDelta, lossesDelta int) {
 	for ; i+1 < len(s.scoreboard) && score < s.scoreboard[i+1].Score(); i++ {
 		s.scoreboard[i], s.scoreboard[i+1] = s.scoreboard[i+1], s.scoreboard[i]
 	}
+
+	s.mu.Unlock()
 }
 
 func (s *Scoreboard) indexOf(userID int64) int {
@@ -99,6 +109,9 @@ func (s *Scoreboard) indexOf(userID int64) int {
 }
 
 func (s *Scoreboard) RankOf(userID int64) int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	if s.scoreboard[0].UserID == userID {
 		return 1
 	}
