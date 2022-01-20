@@ -1,7 +1,9 @@
 package util
 
 import (
+	"math"
 	"sort"
+	"strings"
 	"sync"
 
 	"github.com/ArminGh02/othello-bot/pkg/database"
@@ -112,18 +114,15 @@ func (s *Scoreboard) RankOf(userID int64) int {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if s.scoreboard[0].UserID == userID {
-		return 1
-	}
-	lastScore := s.scoreboard[0].Score()
+	lastScore := math.MinInt
 	rank := 1
-	for i, n := 1, len(s.scoreboard); i < n; i++ {
+	for i := range s.scoreboard {
+		if s.scoreboard[i].UserID == userID {
+			return rank
+		}
 		if score := s.scoreboard[i].Score(); score != lastScore {
 			rank++
 			lastScore = score
-		}
-		if s.scoreboard[i].UserID == userID {
-			return rank
 		}
 	}
 	panic("An attempt was made to retrieve the rank of a user that was not inserted into scoreboard.")
