@@ -90,8 +90,8 @@ func (s *Scoreboard) UpdateRankOf(userID int64, winsDelta, lossesDelta int) {
 }
 
 func (s *Scoreboard) RankOf(userID int64) int {
-	for i, player := range s.scoreboard {
-		if player.UserID == userID {
+	for i := range s.scoreboard {
+		if s.scoreboard[i].UserID == userID {
 			return i + 1
 		}
 	}
