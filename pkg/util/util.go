@@ -104,7 +104,7 @@ func (s *Scoreboard) RankOf(userID int64) int {
 	}
 	lastScore := s.scoreboard[0].Score()
 	rank := 1
-	for i := range s.scoreboard[1:] {
+	for i, n := 1, len(s.scoreboard); i < n; i++ {
 		if score := s.scoreboard[i].Score(); score != lastScore {
 			rank++
 			lastScore = score
