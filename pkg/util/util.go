@@ -1,6 +1,7 @@
 package util
 
 import (
+	"fmt"
 	"math"
 	"sort"
 	"strings"
@@ -115,15 +116,38 @@ func (s *Scoreboard) RankOf(userID int64) int {
 	defer s.mu.Unlock()
 
 	lastScore := math.MinInt
-	rank := 1
+	rank := 0
 	for i := range s.scoreboard {
-		if s.scoreboard[i].UserID == userID {
-			return rank
-		}
 		if score := s.scoreboard[i].Score(); score != lastScore {
 			rank++
 			lastScore = score
 		}
+		if s.scoreboard[i].UserID == userID {
+			return rank
+		}
 	}
 	panic("An attempt was made to retrieve the rank of a user that was not inserted into scoreboard.")
+}
+
+func (s *Scoreboard) String() string {
+	var sb strings.Builder
+	rank := 0
+	lastScore := math.MinInt
+	for i := range s.scoreboard {
+		if score := s.scoreboard[i].Score(); score != lastScore {
+			rank++
+			lastScore = score
+		}
+		switch rank {
+		case 1:
+			sb.WriteString(fmt.Sprintf("1. %s 🥇\n", s.scoreboard[i].Name))
+		case 2:
+			sb.WriteString(fmt.Sprintf("2. %s 🥈\n", s.scoreboard[i].Name))
+		case 3:
+			sb.WriteString(fmt.Sprintf("3. %s 🥉\n", s.scoreboard[i].Name))
+		default:
+			sb.WriteString(fmt.Sprintf("%d. %s\n", rank, s.scoreboard[i].Name))
+		}
+	}
+	return sb.String()
 }
