@@ -72,7 +72,7 @@ func (s *Scoreboard) Insert(player *database.PlayerDoc) {
 }
 
 func (s *Scoreboard) UpdateRankOf(userID int64, winsDelta, lossesDelta int) {
-	i := s.RankOf(userID) - 1
+	i := s.indexOf(userID)
 	player := &s.scoreboard[i]
 
 	player.Wins += winsDelta
@@ -89,10 +89,28 @@ func (s *Scoreboard) UpdateRankOf(userID int64, winsDelta, lossesDelta int) {
 	}
 }
 
-func (s *Scoreboard) RankOf(userID int64) int {
+func (s *Scoreboard) indexOf(userID int64) int {
 	for i := range s.scoreboard {
 		if s.scoreboard[i].UserID == userID {
-			return i + 1
+			return i
+		}
+	}
+	panic("An attempt was made to retrieve the index of a user that was not inserted into scoreboard.")
+}
+
+func (s *Scoreboard) RankOf(userID int64) int {
+	if s.scoreboard[0].UserID == userID {
+		return 1
+	}
+	lastScore := s.scoreboard[0].Score()
+	rank := 1
+	for i := range s.scoreboard[1:] {
+		if score := s.scoreboard[i].Score(); score != lastScore {
+			rank++
+			lastScore = score
+		}
+		if s.scoreboard[i].UserID == userID {
+			return rank
 		}
 	}
 	panic("An attempt was made to retrieve the rank of a user that was not inserted into scoreboard.")
