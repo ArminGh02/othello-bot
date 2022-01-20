@@ -119,8 +119,7 @@ func (bot *Bot) askGameMode(message *tgbotapi.Message) {
 }
 
 func (bot *Bot) showScoreboard(message *tgbotapi.Message) {
-	// TODO: implement
-	bot.api.Send(tgbotapi.NewMessage(message.Chat.ID, "Not implemented yet!"))
+	bot.api.Send(tgbotapi.NewMessage(message.Chat.ID, bot.scoreboard.String()))
 }
 
 func (bot *Bot) showProfile(message *tgbotapi.Message) {
