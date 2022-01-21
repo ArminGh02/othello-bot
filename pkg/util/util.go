@@ -145,13 +145,17 @@ func (s *Scoreboard) String() string {
 		}
 		switch rank {
 		case 1:
-			sb.WriteString(fmt.Sprintf("1. %s 🥇\n", s.scoreboard[i].Name))
+			str := fmt.Sprintf("1. %s 🥇 Score: %d\n", s.scoreboard[i].Name, s.scoreboard[i].Score())
+			sb.WriteString(str)
 		case 2:
-			sb.WriteString(fmt.Sprintf("2. %s 🥈\n", s.scoreboard[i].Name))
+			str := fmt.Sprintf("2. %s 🥈 Score: %d\n", s.scoreboard[i].Name, s.scoreboard[i].Score())
+			sb.WriteString(str)
 		case 3:
-			sb.WriteString(fmt.Sprintf("3. %s 🥉\n", s.scoreboard[i].Name))
+			str := fmt.Sprintf("3. %s 🥉 Score: %d\n", s.scoreboard[i].Name, s.scoreboard[i].Score())
+			sb.WriteString(str)
 		default:
-			sb.WriteString(fmt.Sprintf("%d. %s\n", rank, s.scoreboard[i].Name))
+			str := fmt.Sprintf("%d. %s Score: %d\n", rank, s.scoreboard[i].Name, s.scoreboard[i].Score())
+			sb.WriteString(str)
 		}
 	}
 	return sb.String()
