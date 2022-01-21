@@ -268,7 +268,10 @@ func (bot *Bot) toggleShowingLegalMoves(query *tgbotapi.CallbackQuery) {
 
 	bot.db.ToggleLegalMovesAreShown(user.ID)
 
-	bot.api.Send(getEditedMsgOfGame(game, query, user.ID, bot.db.LegalMovesAreShown(user.ID)))
+	if *user == *game.ActiveUser() {
+		bot.api.Send(getEditedMsgOfGame(game, query, user.ID, bot.db.LegalMovesAreShown(user.ID)))
+	}
+
 	bot.api.Request(tgbotapi.CallbackConfig{
 		CallbackQueryID: query.ID,
 	})
