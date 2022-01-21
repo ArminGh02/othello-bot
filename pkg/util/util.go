@@ -74,8 +74,13 @@ func (s *Scoreboard) Insert(player *database.PlayerDoc) {
 	for i-1 >= 0 && score > s.scoreboard[i-1].Score() {
 		i--
 	}
-	s.scoreboard = append(s.scoreboard[:i+1], s.scoreboard[i:]...)
-	s.scoreboard[i] = *player
+
+	if i == len(s.scoreboard) {
+		s.scoreboard = append(s.scoreboard, *player)
+	} else {
+		s.scoreboard = append(s.scoreboard[:i+1], s.scoreboard[i:]...)
+		s.scoreboard[i] = *player
+	}
 
 	s.mu.Unlock()
 }
