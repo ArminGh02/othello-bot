@@ -102,8 +102,9 @@ func (bot *Bot) handleCommand(message *tgbotapi.Message) {
 		msg.ParseMode = "MarkdownV2"
 		bot.api.Send(msg)
 
-		bot.db.AddPlayer(user.ID, getFullNameOf(user))
-		bot.scoreboard.Insert(bot.db.Find(user.ID))
+		if bot.db.AddPlayer(user.ID, getFullNameOf(user)) {
+			bot.scoreboard.Insert(bot.db.Find(user.ID))
+		}
 	default:
 		msgText := fmt.Sprintf("Sorry! %s is not recognized as a command.", command)
 		bot.api.Send(tgbotapi.NewMessage(message.Chat.ID, msgText))
@@ -202,6 +203,10 @@ func (bot *Bot) startNewGameWithFriend(query *tgbotapi.CallbackQuery) {
 
 	user2 := query.From
 
+	if bot.db.AddPlayer(user2.ID, getFullNameOf(user2)) {
+		bot.scoreboard.Insert(bot.db.Find(user2.ID))
+	}
+
 	game := othellogame.New(user1, user2)
 
 	log.Printf("Started %s\n", game)
@@ -288,6 +293,12 @@ func (bot *Bot) alertProfile(white bool, query *tgbotapi.CallbackQuery) {
 }
 
 func (bot *Bot) handleInlineQuery(inlineQuery *tgbotapi.InlineQuery) {
+	user := inlineQuery.From
+
+	if bot.db.AddPlayer(user.ID, getFullNameOf(user)) {
+		bot.scoreboard.Insert(bot.db.Find(user.ID))
+	}
+
 	game := tgbotapi.NewInlineQueryResultArticleMarkdownV2(
 		uuid.NewString(),
 		"Othello",
