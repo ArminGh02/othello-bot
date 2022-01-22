@@ -42,7 +42,7 @@ func getEditedMsgOfGame(
 		query.Message.Chat.ID,
 		query.Message.MessageID,
 		getGameMsg(game),
-		*buildGameKeyboard(game, showLegalMoves),
+		*buildGameKeyboard(game, showLegalMoves, false),
 	)
 }
 
@@ -54,13 +54,13 @@ func getEditedMsgOfGameInline(
 	return tgbotapi.EditMessageTextConfig{
 		BaseEdit: tgbotapi.BaseEdit{
 			InlineMessageID: inlineMessageID,
-			ReplyMarkup:     buildGameKeyboard(game, showLegalMoves),
+			ReplyMarkup:     buildGameKeyboard(game, showLegalMoves, true),
 		},
 		Text: getGameMsg(game),
 	}
 }
 
-func buildGameKeyboard(game *othellogame.Game, showLegalMoves bool) *tgbotapi.InlineKeyboardMarkup {
+func buildGameKeyboard(game *othellogame.Game, showLegalMoves, inline bool) *tgbotapi.InlineKeyboardMarkup {
 	keyboard := game.InlineKeyboard(showLegalMoves)
 
 	whiteProfile := fmt.Sprintf("%s%s: %d",
@@ -88,6 +88,9 @@ func buildGameKeyboard(game *othellogame.Game, showLegalMoves bool) *tgbotapi.In
 	row = tgbotapi.NewInlineKeyboardRow(
 		tgbotapi.NewInlineKeyboardButtonData(buttonText, "toggleShowingLegalMoves"),
 	)
+	if inline {
+		row = append(row, tgbotapi.NewInlineKeyboardButtonSwitch("Send down 🔽", "#Resend"))
+	}
 	keyboard = append(keyboard, row)
 
 	return &tgbotapi.InlineKeyboardMarkup{
