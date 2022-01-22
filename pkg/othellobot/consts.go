@@ -18,4 +18,4 @@ const (
 	HELP_BUTTON_TEXT       = "❓ Help"
 )
 
-const RESEND_QUERY = "#Resend"
+var RESEND_QUERY = "#Resend"
