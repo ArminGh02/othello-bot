@@ -195,7 +195,25 @@ func (bot *Bot) handleGameEnd(game *othellogame.Game, query *tgbotapi.CallbackQu
 		bot.scoreboard.UpdateRankOf(winner.ID, 1, 0)
 		bot.scoreboard.UpdateRankOf(loser.ID, 0, 1)
 	}
+
 	bot.api.Request(tgbotapi.NewCallback(query.ID, "Game is over!"))
+
+	bot.cleanUp(game, query)
+}
+
+func (bot *Bot) cleanUp(game *othellogame.Game, query *tgbotapi.CallbackQuery) {
+	delete(bot.usersToCurrentGames, *game.WhiteUser())
+	delete(bot.usersToCurrentGames, *game.BlackUser())
+
+	if query.InlineMessageID != "" {
+		bot.inlineMessageIDsToUsersMutex.Lock()
+		delete(bot.inlineMessageIDsToUsers, query.InlineMessageID)
+		bot.inlineMessageIDsToUsersMutex.Unlock()
+
+		bot.gamesToInlineMessageIDsMutex.Lock()
+		delete(bot.gamesToInlineMessageIDs, game)
+		bot.gamesToInlineMessageIDsMutex.Unlock()
+	}
 }
 
 func (bot *Bot) startNewGameWithFriend(query *tgbotapi.CallbackQuery) {
@@ -338,6 +356,8 @@ func (bot *Bot) handleSurrender(query *tgbotapi.CallbackQuery) {
 	bot.api.Request(tgbotapi.CallbackConfig{
 		CallbackQueryID: query.ID,
 	})
+
+	bot.cleanUp(game, query)
 
 	bot.usersToCurrentGamesMutex.Unlock()
 
