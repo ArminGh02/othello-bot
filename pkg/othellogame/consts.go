@@ -1,3 +1,3 @@
 package othellogame
 
-const BOARD_SIZE = 8
+const boardSize = 8

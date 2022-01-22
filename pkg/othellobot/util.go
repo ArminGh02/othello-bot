@@ -16,10 +16,10 @@ func getGameMsg(game *othellogame.Game) string {
 	return fmt.Sprintf("Turn of: %s%s\n%s%s: %d\n%s%s: %d\nDon't count your chickens before they hatch!",
 		game.ActiveColor(),
 		game.ActiveUser().FirstName,
-		consts.WHITE_DISK_EMOJI,
+		consts.WhiteDiskEmoji,
 		game.WhiteUser().FirstName,
 		game.WhiteDisks(),
-		consts.BLACK_DISK_EMOJI,
+		consts.BlackDiskEmoji,
 		game.BlackUser().FirstName,
 		game.BlackDisks(),
 	)
@@ -64,12 +64,12 @@ func buildGameKeyboard(game *othellogame.Game, showLegalMoves, inline bool) *tgb
 	keyboard := game.InlineKeyboard(showLegalMoves)
 
 	whiteProfile := fmt.Sprintf("%s%s: %d",
-		consts.WHITE_DISK_EMOJI,
+		consts.WhiteDiskEmoji,
 		game.WhiteUser().FirstName,
 		game.WhiteDisks(),
 	)
 	blackProfile := fmt.Sprintf("%s%s: %d",
-		consts.BLACK_DISK_EMOJI,
+		consts.BlackDiskEmoji,
 		game.BlackUser().FirstName,
 		game.BlackDisks(),
 	)
@@ -92,7 +92,7 @@ func buildGameKeyboard(game *othellogame.Game, showLegalMoves, inline bool) *tgb
 	if inline {
 		row = append(row, tgbotapi.InlineKeyboardButton{
 			Text:                         "🔽 Send down",
-			SwitchInlineQueryCurrentChat: &RESEND_QUERY,
+			SwitchInlineQueryCurrentChat: &resendQuery,
 		})
 	}
 	keyboard = append(keyboard, row)
@@ -105,12 +105,12 @@ func buildGameKeyboard(game *othellogame.Game, showLegalMoves, inline bool) *tgb
 func buildMainKeyboard() tgbotapi.ReplyKeyboardMarkup {
 	return tgbotapi.NewReplyKeyboard(
 		tgbotapi.NewKeyboardButtonRow(
-			tgbotapi.NewKeyboardButton(NEW_GAME_BUTTON_TEXT),
-			tgbotapi.NewKeyboardButton(SCOREBOARD_BUTTON_TEXT),
+			tgbotapi.NewKeyboardButton(newGameButtonText),
+			tgbotapi.NewKeyboardButton(scoreboardButtonText),
 		),
 		tgbotapi.NewKeyboardButtonRow(
-			tgbotapi.NewKeyboardButton(PROFILE_BUTTON_TEXT),
-			tgbotapi.NewKeyboardButton(HELP_BUTTON_TEXT),
+			tgbotapi.NewKeyboardButton(profileButtonText),
+			tgbotapi.NewKeyboardButton(helpButtonText),
 		),
 	)
 }

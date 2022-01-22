@@ -28,7 +28,7 @@ var offset = [direction.COUNT]coord.Coord{
 type Game struct {
 	users           [2]tgbotapi.User
 	disksCount      [2]int
-	board           [BOARD_SIZE][BOARD_SIZE]cell.Cell
+	board           [boardSize][boardSize]cell.Cell
 	turn            turn.Turn
 	placeableCoords util.CoordSet
 	ended           bool
@@ -123,7 +123,7 @@ func (g *Game) InlineKeyboard(showLegalMoves bool) [][]tgbotapi.InlineKeyboardBu
 		for x, cell := range g.board[y] {
 			var buttonText string
 			if showLegalMoves && g.placeableCoords.Contains(coord.New(x, y)) {
-				buttonText = consts.LEGAL_MOVE_EMOJI
+				buttonText = consts.LegalMoveEmoji
 			} else {
 				buttonText = cell.Emoji()
 			}

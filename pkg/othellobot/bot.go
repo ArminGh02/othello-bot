@@ -80,13 +80,13 @@ func (bot *Bot) handleMessage(message *tgbotapi.Message) {
 		return
 	}
 	switch message.Text {
-	case NEW_GAME_BUTTON_TEXT:
+	case newGameButtonText:
 		bot.askGameMode(message)
-	case SCOREBOARD_BUTTON_TEXT:
+	case scoreboardButtonText:
 		bot.showScoreboard(message)
-	case PROFILE_BUTTON_TEXT:
+	case profileButtonText:
 		bot.showProfile(message)
-	case HELP_BUTTON_TEXT:
+	case helpButtonText:
 		bot.showHelp(message)
 	}
 }
@@ -132,7 +132,7 @@ func (bot *Bot) showProfile(message *tgbotapi.Message) {
 }
 
 func (bot *Bot) showHelp(message *tgbotapi.Message) {
-	bot.api.Send(tgbotapi.NewMessage(message.Chat.ID, HELP_MSG))
+	bot.api.Send(tgbotapi.NewMessage(message.Chat.ID, helpMsg))
 }
 
 func (bot *Bot) handleCallbackQuery(query *tgbotapi.CallbackQuery) {
@@ -381,11 +381,11 @@ func (bot *Bot) handleInlineQuery(inlineQuery *tgbotapi.InlineQuery) {
 	game := tgbotapi.NewInlineQueryResultArticleMarkdownV2(
 		uuid.NewString(),
 		"Othello",
-		fmt.Sprintf("Let's Play Othello\\! [🎯](%s)", BOT_PIC),
+		fmt.Sprintf("Let's Play Othello\\! [🎯](%s)", botPic),
 	)
-	game.Description = HELP_MSG
+	game.Description = helpMsg
 	game.ReplyMarkup = buildJoinToGameKeyboard()
-	game.ThumbURL = BOT_PIC
+	game.ThumbURL = botPic
 	game.ThumbWidth = 330
 	game.ThumbHeight = 280
 

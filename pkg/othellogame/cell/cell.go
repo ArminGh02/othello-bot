@@ -19,9 +19,9 @@ func (c Cell) Emoji() string {
 	case EMPTY:
 		return " "
 	case BLACK:
-		return consts.BLACK_DISK_EMOJI
+		return consts.BlackDiskEmoji
 	case WHITE:
-		return consts.WHITE_DISK_EMOJI
+		return consts.WhiteDiskEmoji
 	default:
 		panic(fmt.Sprintf("Invalid receiver for Cell.Emoji: %v", c))
 	}
