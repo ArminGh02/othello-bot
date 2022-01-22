@@ -99,14 +99,20 @@ func (g *Game) Winner() *tgbotapi.User {
 }
 
 func (g *Game) Loser() *tgbotapi.User {
-	winner := g.Winner()
-	if winner == nil {
+	return g.OpponentOf(g.Winner())
+}
+
+func (g *Game) OpponentOf(user *tgbotapi.User) *tgbotapi.User {
+	if user == nil {
 		return nil
 	}
-	if *winner == g.users[color.WHITE] {
-		return &g.users[color.BLACK]
+	if *user == *g.WhiteUser() {
+		return g.BlackUser()
 	}
-	return &g.users[color.WHITE]
+	if *user == *g.BlackUser() {
+		return g.WhiteUser()
+	}
+	panic("Invalid state: OpponentOf called with an argument unequal to both game users.")
 }
 
 func (g *Game) InlineKeyboard(showLegalMoves bool) [][]tgbotapi.InlineKeyboardButton {
