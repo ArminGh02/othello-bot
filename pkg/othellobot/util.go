@@ -87,9 +87,10 @@ func buildGameKeyboard(game *othellogame.Game, showLegalMoves, inline bool) *tgb
 	}
 	row = tgbotapi.NewInlineKeyboardRow(
 		tgbotapi.NewInlineKeyboardButtonData(buttonText, "toggleShowingLegalMoves"),
+		tgbotapi.NewInlineKeyboardButtonData("🏳️ Surrender", "surrender"),
 	)
 	if inline {
-		row = append(row, tgbotapi.NewInlineKeyboardButtonSwitch("Send down 🔽", "#Resend"))
+		row = append(row, tgbotapi.NewInlineKeyboardButtonSwitch("🔽 Send down", "#Resend"))
 	}
 	keyboard = append(keyboard, row)
 
