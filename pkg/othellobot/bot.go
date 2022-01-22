@@ -237,6 +237,10 @@ func (bot *Bot) startNewGameWithFriend(query *tgbotapi.CallbackQuery) {
 }
 
 func (bot *Bot) playWithRandomOpponent(query *tgbotapi.CallbackQuery) {
+	defer bot.api.Request(tgbotapi.CallbackConfig{
+		CallbackQueryID: query.ID,
+	})
+
 	if len(bot.waitingPlayer) == 0 {
 		bot.waitingPlayer <- query.From
 		return
@@ -259,9 +263,6 @@ func (bot *Bot) playWithRandomOpponent(query *tgbotapi.CallbackQuery) {
 	msg.ReplyMarkup = buildGameKeyboard(game, bot.db.LegalMovesAreShown(game.ActiveUser().ID), false)
 
 	bot.api.Send(msg)
-	bot.api.Request(tgbotapi.CallbackConfig{
-		CallbackQueryID: query.ID,
-	})
 }
 
 func (bot *Bot) toggleShowingLegalMoves(query *tgbotapi.CallbackQuery) {
