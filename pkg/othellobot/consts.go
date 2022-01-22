@@ -17,3 +17,5 @@ const (
 	PROFILE_BUTTON_TEXT    = "👤 Profile"
 	HELP_BUTTON_TEXT       = "❓ Help"
 )
+
+const RESEND_QUERY = "#Resend"
