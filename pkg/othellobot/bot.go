@@ -154,6 +154,8 @@ func (bot *Bot) handleCallbackQuery(query *tgbotapi.CallbackQuery) {
 		bot.alertProfile(true, query)
 	case "blackProfile":
 		bot.alertProfile(false, query)
+	case "surrender":
+		bot.handleSurrender(query)
 	}
 }
 
@@ -213,6 +215,10 @@ func (bot *Bot) startNewGameWithFriend(query *tgbotapi.CallbackQuery) {
 	game := othellogame.New(user1, user2)
 
 	log.Printf("Started %s\n", game)
+
+	bot.gamesToInlineMessageIDsMutex.Lock()
+	bot.gamesToInlineMessageIDs[game] = query.InlineMessageID
+	bot.gamesToInlineMessageIDsMutex.Unlock()
 
 	bot.usersToCurrentGamesMutex.Lock()
 	defer bot.usersToCurrentGamesMutex.Unlock()
@@ -296,6 +302,50 @@ func (bot *Bot) alertProfile(white bool, query *tgbotapi.CallbackQuery) {
 	rank := bot.scoreboard.RankOf(userID)
 
 	bot.api.Request(tgbotapi.NewCallbackWithAlert(query.ID, bot.db.Find(userID).String(rank)))
+}
+
+func (bot *Bot) handleSurrender(query *tgbotapi.CallbackQuery) {
+	loser := query.From
+
+	bot.usersToCurrentGamesMutex.Lock()
+
+	game, ok := bot.usersToCurrentGames[*loser]
+	if !ok {
+		log.Panicf("Invalid state: usersToCurrentGames does not contain %v\n", loser)
+	}
+
+	winner := game.OpponentOf(loser)
+
+	msgText := fmt.Sprintf("%s surrendered to %s!\n", loser.FirstName, winner.FirstName)
+	var msg tgbotapi.Chattable
+	if query.InlineMessageID != "" {
+		msg = tgbotapi.EditMessageTextConfig{
+			BaseEdit: tgbotapi.BaseEdit{
+				InlineMessageID: query.InlineMessageID,
+			},
+			Text: msgText,
+		}
+	} else {
+		msg = tgbotapi.EditMessageTextConfig{
+			BaseEdit: tgbotapi.BaseEdit{
+				ChatID:    query.Message.Chat.ID,
+				MessageID: query.Message.MessageID,
+			},
+			Text: msgText,
+		}
+	}
+	bot.api.Send(msg)
+
+	bot.api.Request(tgbotapi.CallbackConfig{
+		CallbackQueryID: query.ID,
+	})
+
+	bot.usersToCurrentGamesMutex.Unlock()
+
+	bot.db.IncrementWins(winner.ID)
+	bot.db.IncrementLosses(loser.ID)
+	bot.scoreboard.UpdateRankOf(winner.ID, 1, 0)
+	bot.scoreboard.UpdateRankOf(loser.ID, 0, 1)
 }
 
 func (bot *Bot) handleInlineQuery(inlineQuery *tgbotapi.InlineQuery) {
