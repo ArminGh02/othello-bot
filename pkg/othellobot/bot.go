@@ -282,9 +282,7 @@ func (bot *Bot) toggleShowingLegalMoves(query *tgbotapi.CallbackQuery) {
 		bot.api.Send(getEditedMsgOfGame(game, query, user.ID, bot.db.LegalMovesAreShown(user.ID)))
 	}
 
-	bot.api.Request(tgbotapi.CallbackConfig{
-		CallbackQueryID: query.ID,
-	})
+	bot.api.Request(tgbotapi.NewCallback(query.ID, "Toggled for you!"))
 }
 
 func (bot *Bot) alertProfile(white bool, query *tgbotapi.CallbackQuery) {
