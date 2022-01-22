@@ -99,13 +99,14 @@ func (g *Game) Winner() *tgbotapi.User {
 }
 
 func (g *Game) Loser() *tgbotapi.User {
-	return g.OpponentOf(g.Winner())
+	winner := g.Winner()
+	if winner == nil {
+		return nil
+	}
+	return g.OpponentOf(winner)
 }
 
 func (g *Game) OpponentOf(user *tgbotapi.User) *tgbotapi.User {
-	if user == nil {
-		return nil
-	}
 	if *user == *g.WhiteUser() {
 		return g.BlackUser()
 	}
