@@ -13,7 +13,8 @@ func getFullNameOf(user *tgbotapi.User) string {
 }
 
 func getGameMsg(game *othellogame.Game) string {
-	return fmt.Sprintf("Turn of: %s%s\n%s%s: %d\n%s%s: %d\nDon't count your chickens before they hatch!",
+	return fmt.Sprintf(
+		"Turn of: %s%s\n%s%s: %d\n%s%s: %d\nDon't count your chickens before they hatch!",
 		game.ActiveColor(),
 		game.ActiveUser().FirstName,
 		consts.WhiteDiskEmoji,
@@ -63,12 +64,14 @@ func getEditedMsgOfGameInline(
 func buildGameKeyboard(game *othellogame.Game, showLegalMoves, inline bool) *tgbotapi.InlineKeyboardMarkup {
 	keyboard := game.InlineKeyboard(showLegalMoves)
 
-	whiteProfile := fmt.Sprintf("%s%s: %d",
+	whiteProfile := fmt.Sprintf(
+		"%s%s: %d",
 		consts.WhiteDiskEmoji,
 		game.WhiteUser().FirstName,
 		game.WhiteDisks(),
 	)
-	blackProfile := fmt.Sprintf("%s%s: %d",
+	blackProfile := fmt.Sprintf(
+		"%s%s: %d",
 		consts.BlackDiskEmoji,
 		game.BlackUser().FirstName,
 		game.BlackDisks(),
@@ -121,7 +124,10 @@ func buildGameModeKeyboard() tgbotapi.InlineKeyboardMarkup {
 			tgbotapi.NewInlineKeyboardButtonSwitch("Play with friends!", ""),
 		),
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("Play with random opponents!", "playWithRandomOpponent"),
+			tgbotapi.NewInlineKeyboardButtonData(
+				"Play with random opponents!",
+				"playWithRandomOpponent",
+			),
 		),
 	)
 }
