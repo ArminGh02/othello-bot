@@ -2,7 +2,6 @@ package othellogame
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/ArminGh02/othello-bot/pkg/consts"
 	"github.com/ArminGh02/othello-bot/pkg/othellogame/cell"
@@ -86,9 +85,6 @@ func (g *Game) IsEnded() bool {
 }
 
 func (g *Game) Winner() *tgbotapi.User {
-	if !g.ended {
-		log.Panicln("Invalid state: Winner called when game is still running")
-	}
 	if g.disksCount[color.WHITE] == g.disksCount[color.BLACK] {
 		return nil
 	}
