@@ -116,6 +116,17 @@ func (g *Game) OpponentOf(user *tgbotapi.User) *tgbotapi.User {
 	panic("Invalid state: OpponentOf called with an argument unequal to both game users.")
 }
 
+func (g *Game) WinnerColor() string {
+	winner := g.Winner()
+	if winner == nil {
+		panic("Invalid state: WinnerColor called when the game is a draw.")
+	}
+	if *winner == g.users[color.WHITE] {
+		return cell.WHITE.Emoji()
+	}
+	return cell.BLACK.Emoji()
+}
+
 func (g *Game) InlineKeyboard(showLegalMoves bool) [][]tgbotapi.InlineKeyboardButton {
 	keyboard := make([][]tgbotapi.InlineKeyboardButton, len(g.board))
 	for y := range g.board {
