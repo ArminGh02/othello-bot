@@ -137,6 +137,20 @@ func (g *Game) InlineKeyboard(showLegalMoves bool) [][]tgbotapi.InlineKeyboardBu
 	return keyboard
 }
 
+func (g *Game) EndInlineKeyboard(showLegalMoves bool) [][]tgbotapi.InlineKeyboardButton {
+	keyboard := make([][]tgbotapi.InlineKeyboardButton, len(g.board))
+	for y := range g.board {
+		keyboard[y] = make([]tgbotapi.InlineKeyboardButton, len(g.board[y]))
+		for x, cell := range g.board[y] {
+			keyboard[y][x] = tgbotapi.NewInlineKeyboardButtonData(
+				cell.Emoji(),
+				fmt.Sprintf("%d_%d", x, y),
+			)
+		}
+	}
+	return keyboard
+}
+
 func (g *Game) PlaceDisk(where coord.Coord, user *tgbotapi.User) error {
 	if err := g.checkPlacingDisk(where, user); err != nil {
 		return err
