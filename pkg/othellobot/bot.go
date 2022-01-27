@@ -156,6 +156,8 @@ func (bot *Bot) handleCallbackQuery(query *tgbotapi.CallbackQuery) {
 		bot.alertProfile(false, query)
 	case "surrender":
 		bot.handleSurrender(query)
+	case "gameOver":
+		bot.api.Request(tgbotapi.NewCallback(query.ID, "Game is over!"))
 	}
 }
 
