@@ -144,7 +144,7 @@ func (g *Game) EndInlineKeyboard(showLegalMoves bool) [][]tgbotapi.InlineKeyboar
 		for x, cell := range g.board[y] {
 			keyboard[y][x] = tgbotapi.NewInlineKeyboardButtonData(
 				cell.Emoji(),
-				fmt.Sprintf("%d_%d", x, y),
+				"gameOver",
 			)
 		}
 	}
