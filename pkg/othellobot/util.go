@@ -2,6 +2,7 @@ package othellobot
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/ArminGh02/othello-bot/pkg/consts"
 	"github.com/ArminGh02/othello-bot/pkg/othellogame"
@@ -59,6 +60,54 @@ func getEditedMsgOfGameInline(
 		},
 		Text: getGameMsg(game),
 	}
+}
+
+func getGameOverMsg(game *othellogame.Game, query *tgbotapi.CallbackQuery) tgbotapi.Chattable {
+	var msgText string
+	if winner := game.Winner(); winner == nil {
+		msgText = "Draw"
+	} else {
+		msgText = fmt.Sprintf(
+			"%s%s WON! %d to %d! 🔥",
+			game.WinnerColor(),
+			winner.FirstName,
+			int(math.Max(float64(game.WhiteDisks()), float64(game.BlackDisks()))),
+			int(math.Min(float64(game.WhiteDisks()), float64(game.BlackDisks()))),
+		)
+	}
+
+	inline := query.InlineMessageID != ""
+
+	var button tgbotapi.InlineKeyboardButton
+	if inline {
+		inlineQuery := ""
+		button = tgbotapi.InlineKeyboardButton{
+			Text:                         "Play again",
+			SwitchInlineQueryCurrentChat: &inlineQuery,
+		}
+	} else {
+		button = tgbotapi.NewInlineKeyboardButtonData("Rematch 🔄", "rematch")
+	}
+	row := tgbotapi.NewInlineKeyboardRow(button)
+	replyMarkup := tgbotapi.InlineKeyboardMarkup{
+		InlineKeyboard: append(game.EndInlineKeyboard(), row),
+	}
+
+	if inline {
+		return tgbotapi.EditMessageTextConfig{
+			BaseEdit: tgbotapi.BaseEdit{
+				InlineMessageID: query.InlineMessageID,
+				ReplyMarkup:     &replyMarkup,
+			},
+			Text: msgText,
+		}
+	}
+	return tgbotapi.NewEditMessageTextAndMarkup(
+		query.Message.Chat.ID,
+		query.Message.MessageID,
+		msgText,
+		replyMarkup,
+	)
 }
 
 func buildGameKeyboard(game *othellogame.Game, showLegalMoves, inline bool) *tgbotapi.InlineKeyboardMarkup {
