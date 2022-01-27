@@ -196,6 +196,7 @@ func (bot *Bot) handleGameEnd(game *othellogame.Game, query *tgbotapi.CallbackQu
 		bot.scoreboard.UpdateRankOf(loser.ID, 0, 1)
 	}
 
+	bot.api.Send(getGameOverMsg(game, query))
 	bot.api.Request(tgbotapi.NewCallback(query.ID, "Game is over!"))
 
 	bot.cleanUp(game, query)
