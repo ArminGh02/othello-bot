@@ -148,7 +148,7 @@ func (g *Game) InlineKeyboard(showLegalMoves bool) [][]tgbotapi.InlineKeyboardBu
 	return keyboard
 }
 
-func (g *Game) EndInlineKeyboard(showLegalMoves bool) [][]tgbotapi.InlineKeyboardButton {
+func (g *Game) EndInlineKeyboard() [][]tgbotapi.InlineKeyboardButton {
 	keyboard := make([][]tgbotapi.InlineKeyboardButton, len(g.board))
 	for y := range g.board {
 		keyboard[y] = make([]tgbotapi.InlineKeyboardButton, len(g.board[y]))
