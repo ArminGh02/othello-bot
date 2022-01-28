@@ -336,29 +336,8 @@ func (bot *Bot) handleSurrender(query *tgbotapi.CallbackQuery) {
 
 	winner := game.OpponentOf(loser)
 
-	msgText := fmt.Sprintf("%s surrendered to %s!\n", loser.FirstName, winner.FirstName)
-	var msg tgbotapi.Chattable
-	if query.InlineMessageID != "" {
-		msg = tgbotapi.EditMessageTextConfig{
-			BaseEdit: tgbotapi.BaseEdit{
-				InlineMessageID: query.InlineMessageID,
-				ReplyMarkup:     buildGameOverKeyboard(game, true),
-			},
-			Text: msgText,
-		}
-	} else {
-		msg = tgbotapi.NewEditMessageTextAndMarkup(
-			query.Message.Chat.ID,
-			query.Message.MessageID,
-			msgText,
-			*buildGameOverKeyboard(game, false),
-		)
-	}
-	bot.api.Send(msg)
-
-	bot.api.Request(tgbotapi.CallbackConfig{
-		CallbackQueryID: query.ID,
-	})
+	bot.api.Send(getSurrenderMsg(game, query, winner, loser))
+	bot.api.Request(tgbotapi.NewCallback(query.ID, "You surrendered!"))
 
 	bot.cleanUp(game, query)
 
