@@ -100,8 +100,7 @@ func getGameOverMsg(game *othellogame.Game, query *tgbotapi.CallbackQuery) tgbot
 func getSurrenderMsg(
 	game *othellogame.Game,
 	query *tgbotapi.CallbackQuery,
-	winner,
-	loser *tgbotapi.User,
+	winner, loser *tgbotapi.User,
 ) tgbotapi.Chattable {
 	msgText := fmt.Sprintf("%s surrendered to %s!", loser.FirstName, winner.FirstName)
 	if query.InlineMessageID != "" {
