@@ -9,7 +9,36 @@ import (
 
 	"github.com/ArminGh02/othello-bot/pkg/database"
 	"github.com/ArminGh02/othello-bot/pkg/util/coord"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
+
+func UsernameElseName(user *tgbotapi.User) string {
+	username := user.UserName
+	if username != "" {
+		return "@" + username
+	}
+	return FullNameOf(user)
+}
+
+func FullNameOf(user *tgbotapi.User) string {
+	if user.FirstName == "" && user.LastName == "" {
+		return user.UserName
+	}
+	if user.LastName == "" {
+		return user.FirstName
+	}
+	if user.FirstName == "" {
+		return user.LastName
+	}
+	return user.FirstName + " " + user.LastName
+}
+
+func FirstNameElseLastName(user *tgbotapi.User) string {
+	if user.FirstName == "" {
+		return user.LastName
+	}
+	return user.FirstName
+}
 
 type CoordSet struct {
 	m map[coord.Coord]struct{}
