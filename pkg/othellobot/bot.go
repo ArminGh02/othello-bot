@@ -202,6 +202,8 @@ func (bot *Bot) handleGameEnd(game *othellogame.Game, query *tgbotapi.CallbackQu
 	bot.api.Request(tgbotapi.NewCallback(query.ID, "Game is over!"))
 
 	bot.cleanUp(game, query)
+
+	log.Printf("%v is over.\n", game)
 }
 
 func (bot *Bot) cleanUp(game *othellogame.Game, query *tgbotapi.CallbackQuery) {
@@ -347,6 +349,8 @@ func (bot *Bot) handleSurrender(query *tgbotapi.CallbackQuery) {
 	bot.db.IncrementLosses(loser.ID)
 	bot.scoreboard.UpdateRankOf(winner.ID, 1, 0)
 	bot.scoreboard.UpdateRankOf(loser.ID, 0, 1)
+
+	log.Printf("%s surrendered in %v.\n", loser.FirstName, game)
 }
 
 func (bot *Bot) handleInlineQuery(inlineQuery *tgbotapi.InlineQuery) {
