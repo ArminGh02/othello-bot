@@ -108,6 +108,8 @@ func (bot *Bot) handleCommand(message *tgbotapi.Message) {
 		if bot.db.AddPlayer(user.ID, getFullNameOf(user)) {
 			bot.scoreboard.Insert(bot.db.Find(user.ID))
 		}
+
+		log.Println("Bot started by", user)
 	default:
 		msgText := fmt.Sprintf("Sorry! %s is not recognized as a command.", command)
 		bot.api.Send(tgbotapi.NewMessage(message.Chat.ID, msgText))
@@ -169,7 +171,7 @@ func (bot *Bot) placeDisk(query *tgbotapi.CallbackQuery) {
 
 	game, ok := bot.usersToCurrentGames[*user]
 	if !ok {
-		log.Panicf("Invalid state: usersToCurrentGames does not contain %v\n", user)
+		log.Panicf("Invalid state: usersToCurrentGames does not contain %v.\n", user)
 	}
 
 	var where coord.Coord
@@ -203,7 +205,7 @@ func (bot *Bot) handleGameEnd(game *othellogame.Game, query *tgbotapi.CallbackQu
 
 	bot.cleanUp(game, query)
 
-	log.Printf("%v is over.\n", game)
+	log.Println(game, "is over.")
 }
 
 func (bot *Bot) cleanUp(game *othellogame.Game, query *tgbotapi.CallbackQuery) {
@@ -225,7 +227,7 @@ func (bot *Bot) startNewGameWithFriend(query *tgbotapi.CallbackQuery) {
 	bot.inlineMessageIDsToUsersMutex.Lock()
 	user1, ok := bot.inlineMessageIDsToUsers[query.InlineMessageID]
 	if !ok {
-		log.Panicf("Invalid state: inlineMessageIDsToUsers does not contain %v\n", query.InlineMessageID)
+		log.Panicf("Invalid state: inlineMessageIDsToUsers does not contain %v.\n", query.InlineMessageID)
 	}
 	bot.inlineMessageIDsToUsersMutex.Unlock()
 
@@ -237,7 +239,7 @@ func (bot *Bot) startNewGameWithFriend(query *tgbotapi.CallbackQuery) {
 
 	game := othellogame.New(user1, user2)
 
-	log.Printf("Started %s\n", game)
+	log.Printf("Started %v.\n", game)
 
 	bot.gamesToInlineMessageIDsMutex.Lock()
 	bot.gamesToInlineMessageIDs[game] = query.InlineMessageID
@@ -274,7 +276,7 @@ func (bot *Bot) playWithRandomOpponent(query *tgbotapi.CallbackQuery) {
 
 	game := othellogame.New(user1, user2)
 
-	log.Printf("Started %s\n", game)
+	log.Printf("Started %s.\n", game)
 
 	bot.usersToCurrentGamesMutex.Lock()
 	defer bot.usersToCurrentGamesMutex.Unlock()
@@ -296,7 +298,7 @@ func (bot *Bot) toggleShowingLegalMoves(query *tgbotapi.CallbackQuery) {
 
 	game, ok := bot.usersToCurrentGames[*user]
 	if !ok {
-		log.Panicf("Invalid state: usersToCurrentGames does not contain %v\n", user)
+		log.Panicf("Invalid state: usersToCurrentGames does not contain %v.\n", user)
 	}
 
 	bot.db.ToggleLegalMovesAreShown(user.ID)
@@ -333,7 +335,7 @@ func (bot *Bot) handleSurrender(query *tgbotapi.CallbackQuery) {
 
 	game, ok := bot.usersToCurrentGames[*loser]
 	if !ok {
-		log.Panicf("Invalid state: usersToCurrentGames does not contain %v\n", loser)
+		log.Panicf("Invalid state: usersToCurrentGames does not contain %v.\n", loser)
 	}
 
 	winner := game.OpponentOf(loser)
@@ -350,7 +352,7 @@ func (bot *Bot) handleSurrender(query *tgbotapi.CallbackQuery) {
 	bot.scoreboard.UpdateRankOf(winner.ID, 1, 0)
 	bot.scoreboard.UpdateRankOf(loser.ID, 0, 1)
 
-	log.Printf("%s surrendered in %v.\n", loser.FirstName, game)
+	log.Printf("%s surrendered in %v.\n", loser, game)
 }
 
 func (bot *Bot) handleInlineQuery(inlineQuery *tgbotapi.InlineQuery) {
@@ -390,7 +392,7 @@ func (bot *Bot) resendGame(inlineQuery *tgbotapi.InlineQuery) {
 
 	game, ok := bot.usersToCurrentGames[*user]
 	if !ok {
-		log.Panicf("Invalid state: usersToCurrentGames does not contain %v\n", user)
+		log.Panicf("Invalid state: usersToCurrentGames does not contain %v.\n", user)
 	}
 
 	msg := tgbotapi.NewInlineQueryResultArticle(
@@ -422,13 +424,13 @@ func (bot *Bot) handleChosenInlineResult(chosenInlineResult *tgbotapi.ChosenInli
 
 	game, ok := bot.usersToCurrentGames[*user]
 	if !ok {
-		log.Panicf("Invalid state: usersToCurrentGames does not contain %v\n", user)
+		log.Panicf("Invalid state: usersToCurrentGames does not contain %v.\n", user)
 	}
 
 	bot.gamesToInlineMessageIDsMutex.Lock()
 	oldID, ok := bot.gamesToInlineMessageIDs[game]
 	if !ok {
-		log.Panicf("Invalid state: gamesToInlineMessageIDs does not contain %v\n", game)
+		log.Panicf("Invalid state: gamesToInlineMessageIDs does not contain %v.\n", game)
 	}
 	bot.gamesToInlineMessageIDs[game] = newID
 	bot.gamesToInlineMessageIDsMutex.Unlock()
