@@ -9,18 +9,18 @@ import (
 type Cell rune
 
 const (
-	EMPTY = Cell(0)
-	BLACK = Cell('b')
-	WHITE = Cell('w')
+	Empty = Cell(0)
+	Black = Cell('b')
+	White = Cell('w')
 )
 
 func (c Cell) Emoji() string {
 	switch c {
-	case EMPTY:
+	case Empty:
 		return " "
-	case BLACK:
+	case Black:
 		return consts.BlackDiskEmoji
-	case WHITE:
+	case White:
 		return consts.WhiteDiskEmoji
 	default:
 		panic(fmt.Sprintf("Invalid receiver for Cell.Emoji: %v", c))
@@ -29,10 +29,10 @@ func (c Cell) Emoji() string {
 
 func (c Cell) Reversed() Cell {
 	switch c {
-	case BLACK:
-		return WHITE
-	case WHITE:
-		return BLACK
+	case Black:
+		return White
+	case White:
+		return Black
 	default:
 		panic(fmt.Sprintf("Invalid receiver for Cell.Emoji: %v", c))
 	}

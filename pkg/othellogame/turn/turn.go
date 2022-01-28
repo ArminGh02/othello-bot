@@ -20,14 +20,14 @@ func Random() Turn {
 
 func (t Turn) Int() int {
 	if t == BLACK {
-		return color.BLACK
+		return color.Black
 	}
-	return color.WHITE
+	return color.White
 }
 
 func (t Turn) Cell() cell.Cell {
 	if t == BLACK {
-		return cell.BLACK
+		return cell.Black
 	}
-	return cell.WHITE
+	return cell.White
 }

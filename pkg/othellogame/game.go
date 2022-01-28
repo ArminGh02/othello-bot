@@ -42,10 +42,10 @@ func New(user1, user2 *tgbotapi.User) *Game {
 	}
 
 	mid := len(g.board)/2 - 1
-	g.board[mid][mid] = cell.WHITE
-	g.board[mid][mid+1] = cell.BLACK
-	g.board[mid+1][mid] = cell.BLACK
-	g.board[mid+1][mid+1] = cell.WHITE
+	g.board[mid][mid] = cell.White
+	g.board[mid][mid+1] = cell.Black
+	g.board[mid+1][mid] = cell.Black
+	g.board[mid+1][mid+1] = cell.White
 
 	g.updatePlaceableCoords()
 
@@ -65,19 +65,19 @@ func (g *Game) ActiveUser() *tgbotapi.User {
 }
 
 func (g *Game) WhiteUser() *tgbotapi.User {
-	return &g.users[color.WHITE]
+	return &g.users[color.White]
 }
 
 func (g *Game) BlackUser() *tgbotapi.User {
-	return &g.users[color.BLACK]
+	return &g.users[color.Black]
 }
 
 func (g *Game) WhiteDisks() int {
-	return g.disksCount[color.WHITE]
+	return g.disksCount[color.White]
 }
 
 func (g *Game) BlackDisks() int {
-	return g.disksCount[color.BLACK]
+	return g.disksCount[color.Black]
 }
 
 func (g *Game) IsEnded() bool {
@@ -85,13 +85,13 @@ func (g *Game) IsEnded() bool {
 }
 
 func (g *Game) Winner() *tgbotapi.User {
-	if g.disksCount[color.WHITE] == g.disksCount[color.BLACK] {
+	if g.disksCount[color.White] == g.disksCount[color.Black] {
 		return nil
 	}
-	if g.disksCount[color.WHITE] > g.disksCount[color.BLACK] {
-		return &g.users[color.WHITE]
+	if g.disksCount[color.White] > g.disksCount[color.Black] {
+		return &g.users[color.White]
 	}
-	return &g.users[color.BLACK]
+	return &g.users[color.Black]
 }
 
 func (g *Game) Loser() *tgbotapi.User {
@@ -117,10 +117,10 @@ func (g *Game) WinnerColor() string {
 	if winner == nil {
 		panic("Invalid state: WinnerColor called when the game is a draw.")
 	}
-	if *winner == g.users[color.WHITE] {
-		return cell.WHITE.Emoji()
+	if *winner == g.users[color.White] {
+		return cell.White.Emoji()
 	}
-	return cell.BLACK.Emoji()
+	return cell.Black.Emoji()
 }
 
 func (g *Game) InlineKeyboard(showLegalMoves bool) [][]tgbotapi.InlineKeyboardButton {
@@ -189,7 +189,7 @@ func (g *Game) checkPlacingDisk(where coord.Coord, user *tgbotapi.User) error {
 	if !g.isTurnOf(user) {
 		return fmt.Errorf("It's not your turn!")
 	}
-	if g.board[where.Y][where.X] != cell.EMPTY {
+	if g.board[where.Y][where.X] != cell.Empty {
 		return fmt.Errorf("That cell is not empty!")
 	}
 	if !g.placeableCoords.Contains(where) {
@@ -213,7 +213,7 @@ func (g *Game) findDirectionsToFlip(where coord.Coord, mustBeEmptyCell bool) []d
 	opponent := g.turn.Cell().Reversed()
 	res := make([]direction.Direction, 0, direction.COUNT)
 
-	if mustBeEmptyCell && g.board[where.Y][where.X] != cell.EMPTY {
+	if mustBeEmptyCell && g.board[where.Y][where.X] != cell.Empty {
 		return res
 	}
 
@@ -232,7 +232,7 @@ func (g *Game) findDirectionsToFlip(where coord.Coord, mustBeEmptyCell bool) []d
 				case g.turn.Cell():
 					res = append(res, i)
 					break loop
-				case cell.EMPTY:
+				case cell.Empty:
 					break loop
 				}
 			}
@@ -269,13 +269,13 @@ func (g *Game) updateDisksCount() {
 	for _, row := range g.board {
 		for _, c := range row {
 			switch c {
-			case cell.WHITE:
+			case cell.White:
 				white++
-			case cell.BLACK:
+			case cell.Black:
 				black++
 			}
 		}
 	}
-	g.disksCount[color.WHITE] = white
-	g.disksCount[color.BLACK] = black
+	g.disksCount[color.White] = white
+	g.disksCount[color.Black] = black
 }
