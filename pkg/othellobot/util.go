@@ -78,20 +78,7 @@ func getGameOverMsg(game *othellogame.Game, query *tgbotapi.CallbackQuery) tgbot
 
 	inline := query.InlineMessageID != ""
 
-	var button tgbotapi.InlineKeyboardButton
-	if inline {
-		inlineQuery := ""
-		button = tgbotapi.InlineKeyboardButton{
-			Text:                         "Play again",
-			SwitchInlineQueryCurrentChat: &inlineQuery,
-		}
-	} else {
-		button = tgbotapi.NewInlineKeyboardButtonData("Rematch 🔄", "rematch")
-	}
-	row := tgbotapi.NewInlineKeyboardRow(button)
-	replyMarkup := tgbotapi.InlineKeyboardMarkup{
-		InlineKeyboard: append(game.EndInlineKeyboard(), row),
-	}
+	replyMarkup := buildGameOverKeyboard(game, inline)
 
 	if inline {
 		return tgbotapi.EditMessageTextConfig{
@@ -151,6 +138,23 @@ func buildGameKeyboard(game *othellogame.Game, showLegalMoves, inline bool) *tgb
 
 	return &tgbotapi.InlineKeyboardMarkup{
 		InlineKeyboard: keyboard,
+	}
+}
+
+func buildGameOverKeyboard(game *othellogame.Game, inline bool) tgbotapi.InlineKeyboardMarkup {
+	var button tgbotapi.InlineKeyboardButton
+	if inline {
+		inlineQuery := ""
+		button = tgbotapi.InlineKeyboardButton{
+			Text:                         "Play again 🔄",
+			SwitchInlineQueryCurrentChat: &inlineQuery,
+		}
+	} else {
+		button = tgbotapi.NewInlineKeyboardButtonData("Rematch 🔄", "rematch")
+	}
+	row := tgbotapi.NewInlineKeyboardRow(button)
+	return tgbotapi.InlineKeyboardMarkup{
+		InlineKeyboard: append(game.EndInlineKeyboard(), row),
 	}
 }
 
