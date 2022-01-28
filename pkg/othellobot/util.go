@@ -84,7 +84,7 @@ func getGameOverMsg(game *othellogame.Game, query *tgbotapi.CallbackQuery) tgbot
 		return tgbotapi.EditMessageTextConfig{
 			BaseEdit: tgbotapi.BaseEdit{
 				InlineMessageID: query.InlineMessageID,
-				ReplyMarkup:     &replyMarkup,
+				ReplyMarkup:     replyMarkup,
 			},
 			Text: msgText,
 		}
@@ -93,7 +93,7 @@ func getGameOverMsg(game *othellogame.Game, query *tgbotapi.CallbackQuery) tgbot
 		query.Message.Chat.ID,
 		query.Message.MessageID,
 		msgText,
-		replyMarkup,
+		*replyMarkup,
 	)
 }
 
@@ -141,7 +141,7 @@ func buildGameKeyboard(game *othellogame.Game, showLegalMoves, inline bool) *tgb
 	}
 }
 
-func buildGameOverKeyboard(game *othellogame.Game, inline bool) tgbotapi.InlineKeyboardMarkup {
+func buildGameOverKeyboard(game *othellogame.Game, inline bool) *tgbotapi.InlineKeyboardMarkup {
 	var button tgbotapi.InlineKeyboardButton
 	if inline {
 		inlineQuery := ""
@@ -153,7 +153,7 @@ func buildGameOverKeyboard(game *othellogame.Game, inline bool) tgbotapi.InlineK
 		button = tgbotapi.NewInlineKeyboardButtonData("Rematch 🔄", "rematch")
 	}
 	row := tgbotapi.NewInlineKeyboardRow(button)
-	return tgbotapi.InlineKeyboardMarkup{
+	return &tgbotapi.InlineKeyboardMarkup{
 		InlineKeyboard: append(game.EndInlineKeyboard(), row),
 	}
 }
