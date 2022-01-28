@@ -53,7 +53,11 @@ func New(user1, user2 *tgbotapi.User) *Game {
 }
 
 func (g *Game) String() string {
-	return fmt.Sprintf("Game between %s and %s", g.users[0].UserName, g.users[1].UserName)
+	return fmt.Sprintf(
+		"Game between %s and %s",
+		util.UsernameElseName(&g.users[0]),
+		util.UsernameElseName(&g.users[1]),
+	)
 }
 
 func (g *Game) ActiveColor() string {
