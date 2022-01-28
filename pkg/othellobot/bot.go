@@ -350,7 +350,7 @@ func (bot *Bot) handleSurrender(query *tgbotapi.CallbackQuery) {
 }
 
 func (bot *Bot) handleInlineQuery(inlineQuery *tgbotapi.InlineQuery) {
-	if inlineQuery.Query == "#Resend" {
+	if inlineQuery.Query == resendQuery {
 		bot.resendGame(inlineQuery)
 	}
 
