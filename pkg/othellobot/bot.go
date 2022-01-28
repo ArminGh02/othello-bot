@@ -105,7 +105,7 @@ func (bot *Bot) handleCommand(message *tgbotapi.Message) {
 		msg.ParseMode = "MarkdownV2"
 		bot.api.Send(msg)
 
-		if bot.db.AddPlayer(user.ID, getFullNameOf(user)) {
+		if bot.db.AddPlayer(user.ID, util.FullNameOf(user)) {
 			bot.scoreboard.Insert(bot.db.Find(user.ID))
 		}
 
@@ -233,7 +233,7 @@ func (bot *Bot) startNewGameWithFriend(query *tgbotapi.CallbackQuery) {
 
 	user2 := query.From
 
-	if bot.db.AddPlayer(user2.ID, getFullNameOf(user2)) {
+	if bot.db.AddPlayer(user2.ID, util.FullNameOf(user2)) {
 		bot.scoreboard.Insert(bot.db.Find(user2.ID))
 	}
 
@@ -362,7 +362,7 @@ func (bot *Bot) handleInlineQuery(inlineQuery *tgbotapi.InlineQuery) {
 
 	user := inlineQuery.From
 
-	if bot.db.AddPlayer(user.ID, getFullNameOf(user)) {
+	if bot.db.AddPlayer(user.ID, util.FullNameOf(user)) {
 		bot.scoreboard.Insert(bot.db.Find(user.ID))
 	}
 
