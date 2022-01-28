@@ -97,6 +97,30 @@ func getGameOverMsg(game *othellogame.Game, query *tgbotapi.CallbackQuery) tgbot
 	)
 }
 
+func getSurrenderMsg(
+	game *othellogame.Game,
+	query *tgbotapi.CallbackQuery,
+	winner,
+	loser *tgbotapi.User,
+) tgbotapi.Chattable {
+	msgText := fmt.Sprintf("%s surrendered to %s!", loser.FirstName, winner.FirstName)
+	if query.InlineMessageID != "" {
+		return tgbotapi.EditMessageTextConfig{
+			BaseEdit: tgbotapi.BaseEdit{
+				InlineMessageID: query.InlineMessageID,
+				ReplyMarkup:     buildGameOverKeyboard(game, true),
+			},
+			Text: msgText,
+		}
+	}
+	return tgbotapi.NewEditMessageTextAndMarkup(
+		query.Message.Chat.ID,
+		query.Message.MessageID,
+		msgText,
+		*buildGameOverKeyboard(game, false),
+	)
+}
+
 func buildGameKeyboard(game *othellogame.Game, showLegalMoves, inline bool) *tgbotapi.InlineKeyboardMarkup {
 	keyboard := game.InlineKeyboard(showLegalMoves)
 
