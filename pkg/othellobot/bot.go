@@ -342,17 +342,17 @@ func (bot *Bot) handleSurrender(query *tgbotapi.CallbackQuery) {
 		msg = tgbotapi.EditMessageTextConfig{
 			BaseEdit: tgbotapi.BaseEdit{
 				InlineMessageID: query.InlineMessageID,
+				ReplyMarkup:     buildGameOverKeyboard(game, true),
 			},
 			Text: msgText,
 		}
 	} else {
-		msg = tgbotapi.EditMessageTextConfig{
-			BaseEdit: tgbotapi.BaseEdit{
-				ChatID:    query.Message.Chat.ID,
-				MessageID: query.Message.MessageID,
-			},
-			Text: msgText,
-		}
+		msg = tgbotapi.NewEditMessageTextAndMarkup(
+			query.Message.Chat.ID,
+			query.Message.MessageID,
+			msgText,
+			*buildGameOverKeyboard(game, false),
+		)
 	}
 	bot.api.Send(msg)
 
