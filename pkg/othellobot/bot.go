@@ -255,17 +255,17 @@ func (bot *Bot) startNewGameWithFriend(query *tgbotapi.CallbackQuery) {
 	bot.gamesToInlineMessageIDs[game] = query.InlineMessageID
 	bot.gamesToInlineMessageIDsMutex.Unlock()
 
-	bot.usersToCurrentGamesMutex.Lock()
-	defer bot.usersToCurrentGamesMutex.Unlock()
-
-	bot.usersToCurrentGames[*user1] = game
-	bot.usersToCurrentGames[*user2] = game
-
 	now := time.Now()
 	bot.usersToLastTimeActiveMutex.Lock()
 	bot.usersToLastTimeActive[*user1] = now
 	bot.usersToLastTimeActive[*user2] = now
 	bot.usersToLastTimeActiveMutex.Unlock()
+
+	bot.usersToCurrentGamesMutex.Lock()
+	defer bot.usersToCurrentGamesMutex.Unlock()
+
+	bot.usersToCurrentGames[*user1] = game
+	bot.usersToCurrentGames[*user2] = game
 
 	bot.api.Send(getEditMsgOfRunningGame(game, query, bot.db.LegalMovesAreShown(game.ActiveUser().ID)))
 	bot.api.Request(tgbotapi.CallbackConfig{
