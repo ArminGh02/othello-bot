@@ -5,6 +5,7 @@ import (
 	"log"
 	"regexp"
 	"sync"
+	"time"
 
 	"github.com/ArminGh02/othello-bot/pkg/database"
 	"github.com/ArminGh02/othello-bot/pkg/othellogame"
@@ -25,6 +26,8 @@ type Bot struct {
 	gamesToInlineMessageIDsMutex sync.Mutex
 	usersToCurrentGames          map[tgbotapi.User]*othellogame.Game
 	usersToCurrentGamesMutex     sync.Mutex
+	usersToLastTimeActive        map[tgbotapi.User]time.Time
+	usersToLastTimeActiveMutex   sync.Mutex
 	waitingPlayer                chan *tgbotapi.User
 }
 
@@ -37,6 +40,7 @@ func New(token string, mongodbURI string) *Bot {
 		inlineMessageIDsToUsers: make(map[string]*tgbotapi.User),
 		gamesToInlineMessageIDs: make(map[*othellogame.Game]string),
 		usersToCurrentGames:     make(map[tgbotapi.User]*othellogame.Game),
+		usersToLastTimeActive:   make(map[tgbotapi.User]time.Time),
 		waitingPlayer:           make(chan *tgbotapi.User, 1),
 	}
 }
@@ -158,6 +162,8 @@ func (bot *Bot) handleCallbackQuery(query *tgbotapi.CallbackQuery) {
 		bot.alertProfile(false, query)
 	case "surrender":
 		bot.handleSurrender(query)
+	case "end":
+		bot.handleEndEarly(query)
 	case "gameOver":
 		bot.api.Request(tgbotapi.NewCallback(query.ID, "Game is over!"))
 	}
@@ -183,7 +189,11 @@ func (bot *Bot) placeDisk(query *tgbotapi.CallbackQuery) {
 	} else if game.IsEnded() {
 		bot.handleGameEnd(game, query)
 	} else {
-		bot.api.Send(getEditedMsgOfGame(game, query, user.ID, bot.db.LegalMovesAreShown(user.ID)))
+		bot.usersToLastTimeActiveMutex.Lock()
+		bot.usersToLastTimeActive[*user] = time.Now()
+		bot.usersToLastTimeActiveMutex.Unlock()
+
+		bot.api.Send(getEditMsgOfRunningGame(game, query, bot.db.LegalMovesAreShown(user.ID)))
 		bot.api.Request(tgbotapi.NewCallback(query.ID, "Disk placed!"))
 	}
 }
@@ -251,11 +261,13 @@ func (bot *Bot) startNewGameWithFriend(query *tgbotapi.CallbackQuery) {
 	bot.usersToCurrentGames[*user1] = game
 	bot.usersToCurrentGames[*user2] = game
 
-	bot.api.Send(getEditedMsgOfGameInline(
-		game,
-		query.InlineMessageID,
-		bot.db.LegalMovesAreShown(game.ActiveUser().ID),
-	))
+	now := time.Now()
+	bot.usersToLastTimeActiveMutex.Lock()
+	bot.usersToLastTimeActive[*user1] = now
+	bot.usersToLastTimeActive[*user2] = now
+	bot.usersToLastTimeActiveMutex.Unlock()
+
+	bot.api.Send(getEditMsgOfRunningGame(game, query, bot.db.LegalMovesAreShown(game.ActiveUser().ID)))
 	bot.api.Request(tgbotapi.CallbackConfig{
 		CallbackQueryID: query.ID,
 	})
@@ -304,7 +316,7 @@ func (bot *Bot) toggleShowingLegalMoves(query *tgbotapi.CallbackQuery) {
 	bot.db.ToggleLegalMovesAreShown(user.ID)
 
 	if *user == *game.ActiveUser() {
-		bot.api.Send(getEditedMsgOfGame(game, query, user.ID, bot.db.LegalMovesAreShown(user.ID)))
+		bot.api.Send(getEditMsgOfRunningGame(game, query, bot.db.LegalMovesAreShown(user.ID)))
 	}
 
 	bot.api.Request(tgbotapi.NewCallback(query.ID, "Toggled for you!"))
@@ -353,6 +365,34 @@ func (bot *Bot) handleSurrender(query *tgbotapi.CallbackQuery) {
 	bot.scoreboard.UpdateRankOf(loser.ID, 0, 1)
 
 	log.Printf("%s surrendered in %v.\n", loser, game)
+}
+
+func (bot *Bot) handleEndEarly(query *tgbotapi.CallbackQuery) {
+	bot.usersToCurrentGamesMutex.Lock()
+	defer bot.usersToCurrentGamesMutex.Unlock()
+
+	user1 := query.From
+
+	game := bot.usersToCurrentGames[*user1]
+
+	user2 := game.OpponentOf(user1)
+
+	bot.usersToLastTimeActiveMutex.Lock()
+	lastActiveTime := bot.usersToLastTimeActive[*user2]
+	bot.usersToLastTimeActiveMutex.Unlock()
+
+	if secondsFromLastActive := time.Now().Sub(lastActiveTime).Seconds(); secondsFromLastActive > 90 {
+		bot.api.Send(getEarlyEndMsg(game, query, user2))
+		bot.api.Request(tgbotapi.CallbackConfig{
+			CallbackQueryID: query.ID,
+		})
+	} else {
+		msg := fmt.Sprintf(
+			"You can end the game if your opponent doesn't place a disk for %d seconds.",
+			90 - int(secondsFromLastActive),
+		)
+		bot.api.Request(tgbotapi.NewCallback(query.ID, msg))
+	}
 }
 
 func (bot *Bot) handleInlineQuery(inlineQuery *tgbotapi.InlineQuery) {
