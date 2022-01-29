@@ -24,42 +24,16 @@ func getGameMsg(game *othellogame.Game) string {
 	)
 }
 
-func getEditedMsgOfGame(
+func getEditMsgOfRunningGame(
 	game *othellogame.Game,
 	query *tgbotapi.CallbackQuery,
-	userID int64,
 	showLegalMoves bool,
-) tgbotapi.Chattable {
-	if query.InlineMessageID != "" {
-		return getEditedMsgOfGameInline(
-			game,
-			query.InlineMessageID,
-			showLegalMoves,
-		)
-	}
-	return tgbotapi.NewEditMessageTextAndMarkup(
-		query.Message.Chat.ID,
-		query.Message.MessageID,
-		getGameMsg(game),
-		*buildGameKeyboard(game, showLegalMoves, false),
-	)
+) tgbotapi.EditMessageTextConfig {
+	replyMarkup := buildGameKeyboard(game, showLegalMoves, query.InlineMessageID != "")
+	return getEditMessageForGame(game, query, getGameMsg(game), replyMarkup)
 }
 
-func getEditedMsgOfGameInline(
-	game *othellogame.Game,
-	inlineMessageID string,
-	showLegalMoves bool,
-) tgbotapi.Chattable {
-	return tgbotapi.EditMessageTextConfig{
-		BaseEdit: tgbotapi.BaseEdit{
-			InlineMessageID: inlineMessageID,
-			ReplyMarkup:     buildGameKeyboard(game, showLegalMoves, true),
-		},
-		Text: getGameMsg(game),
-	}
-}
-
-func getGameOverMsg(game *othellogame.Game, query *tgbotapi.CallbackQuery) tgbotapi.Chattable {
+func getGameOverMsg(game *othellogame.Game, query *tgbotapi.CallbackQuery) tgbotapi.EditMessageTextConfig {
 	var msgText string
 	if winner := game.Winner(); winner == nil {
 		msgText = "Draw"
@@ -72,12 +46,41 @@ func getGameOverMsg(game *othellogame.Game, query *tgbotapi.CallbackQuery) tgbot
 			int(math.Min(float64(game.WhiteDisks()), float64(game.BlackDisks()))),
 		)
 	}
+	replyMarkup := buildGameOverKeyboard(game, query.InlineMessageID != "")
+	return getEditMessageForGame(game, query, msgText, replyMarkup)
+}
 
-	inline := query.InlineMessageID != ""
+func getSurrenderMsg(
+	game *othellogame.Game,
+	query *tgbotapi.CallbackQuery,
+	winner, loser *tgbotapi.User,
+) tgbotapi.EditMessageTextConfig {
+	msgText := fmt.Sprintf(
+		"%s surrendered to %s!",
+		util.FirstNameElseLastName(loser),
+		util.FirstNameElseLastName(winner),
+	)
+	replyMarkup := buildGameOverKeyboard(game, query.InlineMessageID != "")
+	return getEditMessageForGame(game, query, msgText, replyMarkup)
+}
 
-	replyMarkup := buildGameOverKeyboard(game, inline)
+func getEarlyEndMsg(
+	game *othellogame.Game,
+	query *tgbotapi.CallbackQuery,
+	loser *tgbotapi.User,
+) tgbotapi.EditMessageTextConfig {
+	msgText := fmt.Sprintf("Game ended due to inactivity of %s.", util.FirstNameElseLastName(loser))
+	replyMarkup := buildGameOverKeyboard(game, query.InlineMessageID != "")
+	return getEditMessageForGame(game, query, msgText, replyMarkup)
+}
 
-	if inline {
+func getEditMessageForGame(
+	game *othellogame.Game,
+	query *tgbotapi.CallbackQuery,
+	msgText string,
+	replyMarkup *tgbotapi.InlineKeyboardMarkup,
+) tgbotapi.EditMessageTextConfig {
+	if query.InlineMessageID != "" {
 		return tgbotapi.EditMessageTextConfig{
 			BaseEdit: tgbotapi.BaseEdit{
 				InlineMessageID: query.InlineMessageID,
@@ -91,29 +94,6 @@ func getGameOverMsg(game *othellogame.Game, query *tgbotapi.CallbackQuery) tgbot
 		query.Message.MessageID,
 		msgText,
 		*replyMarkup,
-	)
-}
-
-func getSurrenderMsg(
-	game *othellogame.Game,
-	query *tgbotapi.CallbackQuery,
-	winner, loser *tgbotapi.User,
-) tgbotapi.Chattable {
-	msgText := fmt.Sprintf("%s surrendered to %s!", loser.FirstName, winner.FirstName)
-	if query.InlineMessageID != "" {
-		return tgbotapi.EditMessageTextConfig{
-			BaseEdit: tgbotapi.BaseEdit{
-				InlineMessageID: query.InlineMessageID,
-				ReplyMarkup:     buildGameOverKeyboard(game, true),
-			},
-			Text: msgText,
-		}
-	}
-	return tgbotapi.NewEditMessageTextAndMarkup(
-		query.Message.Chat.ID,
-		query.Message.MessageID,
-		msgText,
-		*buildGameOverKeyboard(game, false),
 	)
 }
 
