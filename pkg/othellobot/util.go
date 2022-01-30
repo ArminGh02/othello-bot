@@ -10,8 +10,11 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-func getGameMsg(game *othellogame.Game) string {
-	return fmt.Sprintf(
+func getRunningGameMsgAndReplyMarkup(
+	game *othellogame.Game,
+	showLegalMoves, inline bool,
+) (msg string, replyMarkup *tgbotapi.InlineKeyboardMarkup) {
+	msg = fmt.Sprintf(
 		"Turn of: %s%s\n%s%s: %d\n%s%s: %d\nDon't count your chickens before they hatch!",
 		game.ActiveColor(),
 		util.FirstNameElseLastName(game.ActiveUser()),
@@ -22,23 +25,17 @@ func getGameMsg(game *othellogame.Game) string {
 		util.FirstNameElseLastName(game.BlackUser()),
 		game.BlackDisks(),
 	)
+	return msg, buildGameKeyboard(game, showLegalMoves, inline)
 }
 
-func getEditMsgOfRunningGame(
+func getGameOverMsgAndReplyMarkup(
 	game *othellogame.Game,
-	query *tgbotapi.CallbackQuery,
-	showLegalMoves bool,
-) tgbotapi.EditMessageTextConfig {
-	replyMarkup := buildGameKeyboard(game, showLegalMoves, query.InlineMessageID != "")
-	return getEditMessageForGame(game, query, getGameMsg(game), replyMarkup)
-}
-
-func getGameOverMsg(game *othellogame.Game, query *tgbotapi.CallbackQuery) tgbotapi.EditMessageTextConfig {
-	var msgText string
+	inline bool,
+) (msg string, replyMarkup *tgbotapi.InlineKeyboardMarkup) {
 	if winner := game.Winner(); winner == nil {
-		msgText = "Draw"
+		msg = "Draw"
 	} else {
-		msgText = fmt.Sprintf(
+		msg = fmt.Sprintf(
 			"%s%s WON! %d to %d! 🔥",
 			game.WinnerColor(),
 			winner.FirstName,
@@ -46,58 +43,38 @@ func getGameOverMsg(game *othellogame.Game, query *tgbotapi.CallbackQuery) tgbot
 			int(math.Min(float64(game.WhiteDisks()), float64(game.BlackDisks()))),
 		)
 	}
-	replyMarkup := buildGameOverKeyboard(game, query.InlineMessageID != "")
-	return getEditMessageForGame(game, query, msgText, replyMarkup)
+	return msg, buildGameOverKeyboard(game, inline)
 }
 
-func getSurrenderMsg(
+func getSurrenderMsgAndReplyMarkup(
 	game *othellogame.Game,
-	query *tgbotapi.CallbackQuery,
 	winner, loser *tgbotapi.User,
-) tgbotapi.EditMessageTextConfig {
-	msgText := fmt.Sprintf(
+	inline bool,
+) (msg string, replyMarkup *tgbotapi.InlineKeyboardMarkup) {
+	msg = fmt.Sprintf(
 		"%s surrendered to %s!",
 		util.FirstNameElseLastName(loser),
 		util.FirstNameElseLastName(winner),
 	)
-	replyMarkup := buildGameOverKeyboard(game, query.InlineMessageID != "")
-	return getEditMessageForGame(game, query, msgText, replyMarkup)
+	return msg, buildGameOverKeyboard(game, inline)
 }
 
-func getEarlyEndMsg(
+func getEarlyEndMsgAndReplyMarkup(
 	game *othellogame.Game,
-	query *tgbotapi.CallbackQuery,
 	loser *tgbotapi.User,
-) tgbotapi.EditMessageTextConfig {
-	msgText := fmt.Sprintf("Game ended due to inactivity of %s.", util.FirstNameElseLastName(loser))
-	replyMarkup := buildGameOverKeyboard(game, query.InlineMessageID != "")
-	return getEditMessageForGame(game, query, msgText, replyMarkup)
-}
-
-func getEditMessageForGame(
-	game *othellogame.Game,
-	query *tgbotapi.CallbackQuery,
-	msgText string,
-	replyMarkup *tgbotapi.InlineKeyboardMarkup,
-) tgbotapi.EditMessageTextConfig {
-	if query.InlineMessageID != "" {
-		return tgbotapi.EditMessageTextConfig{
-			BaseEdit: tgbotapi.BaseEdit{
-				InlineMessageID: query.InlineMessageID,
-				ReplyMarkup:     replyMarkup,
-			},
-			Text: msgText,
-		}
-	}
-	return tgbotapi.NewEditMessageTextAndMarkup(
-		query.Message.Chat.ID,
-		query.Message.MessageID,
-		msgText,
-		*replyMarkup,
+	inline bool,
+) (msg string, replyMarkup *tgbotapi.InlineKeyboardMarkup) {
+	msg = fmt.Sprintf(
+		"Game ended due to inactivity of %s.",
+		util.FirstNameElseLastName(loser),
 	)
+	return msg, buildGameOverKeyboard(game, inline)
 }
 
-func buildGameKeyboard(game *othellogame.Game, showLegalMoves, inline bool) *tgbotapi.InlineKeyboardMarkup {
+func buildGameKeyboard(
+	game *othellogame.Game,
+	showLegalMoves, inline bool,
+) *tgbotapi.InlineKeyboardMarkup {
 	whiteProfile := fmt.Sprintf(
 		"%s%s: %d",
 		consts.WhiteDiskEmoji,
@@ -194,7 +171,9 @@ func buildGameModeKeyboard() tgbotapi.InlineKeyboardMarkup {
 
 func buildJoinToGameKeyboard() *tgbotapi.InlineKeyboardMarkup {
 	keyboard := tgbotapi.NewInlineKeyboardMarkup(
-		tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Join", "join")),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Join", "join"),
+		),
 	)
 	return &keyboard
 }
