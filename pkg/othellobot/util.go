@@ -101,20 +101,30 @@ func buildGameKeyboard(game *othellogame.Game, showLegalMoves, inline bool) *tgb
 	whiteProfile := fmt.Sprintf(
 		"%s%s: %d",
 		consts.WhiteDiskEmoji,
-		game.WhiteUser().FirstName,
+		util.FirstNameElseLastName(game.WhiteUser()),
 		game.WhiteDisks(),
 	)
 	blackProfile := fmt.Sprintf(
 		"%s%s: %d",
 		consts.BlackDiskEmoji,
-		game.BlackUser().FirstName,
+		util.FirstNameElseLastName(game.BlackUser()),
 		game.BlackDisks(),
 	)
-	row := tgbotapi.NewInlineKeyboardRow(
+
+	row1 := tgbotapi.NewInlineKeyboardRow(
 		tgbotapi.NewInlineKeyboardButtonData(whiteProfile, "whiteProfile"),
 		tgbotapi.NewInlineKeyboardButtonData(blackProfile, "blackProfile"),
 	)
-	keyboard := append(game.InlineKeyboard(showLegalMoves), row)
+
+	var button tgbotapi.InlineKeyboardButton
+	if inline {
+		button = tgbotapi.InlineKeyboardButton{
+			Text:                         "🔽 Send down",
+			SwitchInlineQueryCurrentChat: &resendQuery,
+		}
+	} else {
+		button = tgbotapi.NewInlineKeyboardButtonData("💬 Chat", "chat")
+	}
 
 	var buttonText string
 	if showLegalMoves {
@@ -122,20 +132,19 @@ func buildGameKeyboard(game *othellogame.Game, showLegalMoves, inline bool) *tgb
 	} else {
 		buttonText = "Show legal moves"
 	}
-	row = tgbotapi.NewInlineKeyboardRow(
+
+	row2 := tgbotapi.NewInlineKeyboardRow(
+		button,
 		tgbotapi.NewInlineKeyboardButtonData(buttonText, "toggleShowingLegalMoves"),
+	)
+
+	row3 := tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("🔚 End", "end"),
 		tgbotapi.NewInlineKeyboardButtonData("🏳️ Surrender", "surrender"),
 	)
-	if inline {
-		row = append(row, tgbotapi.InlineKeyboardButton{
-			Text:                         "🔽 Send down",
-			SwitchInlineQueryCurrentChat: &resendQuery,
-		})
-	}
-	keyboard = append(keyboard, row)
 
 	return &tgbotapi.InlineKeyboardMarkup{
-		InlineKeyboard: keyboard,
+		InlineKeyboard: append(game.InlineKeyboard(showLegalMoves), row1, row2, row3),
 	}
 }
 
