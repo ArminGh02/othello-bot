@@ -532,7 +532,7 @@ func (bot *Bot) handleChosenInlineResult(chosenInlineResult *tgbotapi.ChosenInli
 	user := chosenInlineResult.From
 	newID := chosenInlineResult.InlineMessageID
 
-	if chosenInlineResult.Query != "#Resend" {
+	if chosenInlineResult.Query != resendQuery {
 		bot.inlineMessageIDsToUsersMutex.Lock()
 		bot.inlineMessageIDsToUsers[newID] = user
 		bot.inlineMessageIDsToUsersMutex.Unlock()
