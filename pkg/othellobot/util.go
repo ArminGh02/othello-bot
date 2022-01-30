@@ -98,8 +98,6 @@ func getEditMessageForGame(
 }
 
 func buildGameKeyboard(game *othellogame.Game, showLegalMoves, inline bool) *tgbotapi.InlineKeyboardMarkup {
-	keyboard := game.InlineKeyboard(showLegalMoves)
-
 	whiteProfile := fmt.Sprintf(
 		"%s%s: %d",
 		consts.WhiteDiskEmoji,
@@ -116,7 +114,7 @@ func buildGameKeyboard(game *othellogame.Game, showLegalMoves, inline bool) *tgb
 		tgbotapi.NewInlineKeyboardButtonData(whiteProfile, "whiteProfile"),
 		tgbotapi.NewInlineKeyboardButtonData(blackProfile, "blackProfile"),
 	)
-	keyboard = append(keyboard, row)
+	keyboard := append(game.InlineKeyboard(showLegalMoves), row)
 
 	var buttonText string
 	if showLegalMoves {
@@ -146,11 +144,11 @@ func buildGameOverKeyboard(game *othellogame.Game, inline bool) *tgbotapi.Inline
 	if inline {
 		inlineQuery := ""
 		button = tgbotapi.InlineKeyboardButton{
-			Text:                         "Play again 🔄",
+			Text:                         "🔄 Play again",
 			SwitchInlineQueryCurrentChat: &inlineQuery,
 		}
 	} else {
-		button = tgbotapi.NewInlineKeyboardButtonData("Rematch 🔄", "rematch")
+		button = tgbotapi.NewInlineKeyboardButtonData("🔄 Rematch", "rematch")
 	}
 	row := tgbotapi.NewInlineKeyboardRow(button)
 	return &tgbotapi.InlineKeyboardMarkup{
