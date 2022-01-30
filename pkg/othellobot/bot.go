@@ -28,6 +28,8 @@ type Bot struct {
 	usersToCurrentGamesMutex     sync.Mutex
 	usersToLastTimeActive        map[tgbotapi.User]time.Time
 	usersToLastTimeActiveMutex   sync.Mutex
+	usersToMessageIDs            map[tgbotapi.User]int
+	usersToMessageIDsMutex       sync.Mutex
 	waitingPlayer                chan *tgbotapi.User
 }
 
@@ -193,7 +195,18 @@ func (bot *Bot) placeDisk(query *tgbotapi.CallbackQuery) {
 		bot.usersToLastTimeActive[*user] = time.Now()
 		bot.usersToLastTimeActiveMutex.Unlock()
 
-		bot.api.Send(getEditMsgOfRunningGame(game, query, bot.db.LegalMovesAreShown(user.ID)))
+		msg, replyMarkup := getRunningGameMsgAndReplyMarkup(
+			game,
+			bot.db.LegalMovesAreShown(user.ID),
+			query.InlineMessageID != "",
+		)
+		bot.sendEditMessageTextForGame(
+			msg,
+			replyMarkup,
+			game.WhiteUser(),
+			game.BlackUser(),
+			query.InlineMessageID,
+		)
 		bot.api.Request(tgbotapi.NewCallback(query.ID, "Disk placed!"))
 	}
 }
@@ -210,7 +223,15 @@ func (bot *Bot) handleGameEnd(game *othellogame.Game, query *tgbotapi.CallbackQu
 		bot.scoreboard.UpdateRankOf(loser.ID, 0, 1)
 	}
 
-	bot.api.Send(getGameOverMsg(game, query))
+	msg, replyMarkup := getGameOverMsgAndReplyMarkup(game, query.InlineMessageID != "")
+	bot.sendEditMessageTextForGame(
+		msg,
+		replyMarkup,
+		game.WhiteUser(),
+		game.BlackUser(),
+		query.InlineMessageID,
+	)
+
 	bot.api.Request(tgbotapi.NewCallback(query.ID, "Game is over!"))
 
 	bot.cleanUp(game, query)
@@ -219,8 +240,11 @@ func (bot *Bot) handleGameEnd(game *othellogame.Game, query *tgbotapi.CallbackQu
 }
 
 func (bot *Bot) cleanUp(game *othellogame.Game, query *tgbotapi.CallbackQuery) {
-	delete(bot.usersToCurrentGames, *game.WhiteUser())
-	delete(bot.usersToCurrentGames, *game.BlackUser())
+	user1 := *game.WhiteUser()
+	user2 := *game.BlackUser()
+
+	delete(bot.usersToCurrentGames, user1)
+	delete(bot.usersToCurrentGames, user2)
 
 	if query.InlineMessageID != "" {
 		bot.inlineMessageIDsToUsersMutex.Lock()
@@ -230,6 +254,11 @@ func (bot *Bot) cleanUp(game *othellogame.Game, query *tgbotapi.CallbackQuery) {
 		bot.gamesToInlineMessageIDsMutex.Lock()
 		delete(bot.gamesToInlineMessageIDs, game)
 		bot.gamesToInlineMessageIDsMutex.Unlock()
+	} else {
+		bot.usersToMessageIDsMutex.Lock()
+		delete(bot.usersToMessageIDs, user1)
+		delete(bot.usersToMessageIDs, user2)
+		bot.usersToMessageIDsMutex.Unlock()
 	}
 }
 
@@ -237,7 +266,10 @@ func (bot *Bot) startNewGameWithFriend(query *tgbotapi.CallbackQuery) {
 	bot.inlineMessageIDsToUsersMutex.Lock()
 	user1, ok := bot.inlineMessageIDsToUsers[query.InlineMessageID]
 	if !ok {
-		log.Panicf("Invalid state: inlineMessageIDsToUsers does not contain %v.\n", query.InlineMessageID)
+		log.Panicf(
+			"Invalid state: inlineMessageIDsToUsers does not contain %v.\n",
+			query.InlineMessageID,
+		)
 	}
 	bot.inlineMessageIDsToUsersMutex.Unlock()
 
@@ -267,7 +299,13 @@ func (bot *Bot) startNewGameWithFriend(query *tgbotapi.CallbackQuery) {
 	bot.usersToCurrentGames[*user1] = game
 	bot.usersToCurrentGames[*user2] = game
 
-	bot.api.Send(getEditMsgOfRunningGame(game, query, bot.db.LegalMovesAreShown(game.ActiveUser().ID)))
+	msg, replyMarkup := getRunningGameMsgAndReplyMarkup(
+		game,
+		bot.db.LegalMovesAreShown(game.ActiveUser().ID),
+		query.InlineMessageID != "",
+	)
+	bot.sendEditMessageTextForGame(msg, replyMarkup, user1, user2, query.InlineMessageID)
+
 	bot.api.Request(tgbotapi.CallbackConfig{
 		CallbackQueryID: query.ID,
 	})
@@ -302,10 +340,25 @@ func (bot *Bot) playWithRandomOpponent(query *tgbotapi.CallbackQuery) {
 	bot.usersToCurrentGames[*user1] = game
 	bot.usersToCurrentGames[*user2] = game
 
-	msg := tgbotapi.NewMessage(query.Message.Chat.ID, getGameMsg(game))
-	msg.ReplyMarkup = buildGameKeyboard(game, bot.db.LegalMovesAreShown(game.ActiveUser().ID), false)
+	msgText, replyMarkup := getRunningGameMsgAndReplyMarkup(
+		game,
+		bot.db.LegalMovesAreShown(game.ActiveUser().ID),
+		false,
+	)
+	msg1 := tgbotapi.NewMessage(user1.ID, msgText)
+	msg2 := tgbotapi.NewMessage(user2.ID, msgText)
+	msg1.ReplyMarkup = replyMarkup
+	msg2.ReplyMarkup = replyMarkup
 
-	bot.api.Send(msg)
+	msg, _ := bot.api.Send(msg1)
+	bot.usersToMessageIDsMutex.Lock()
+	bot.usersToMessageIDs[*user1] = msg.MessageID
+	bot.usersToMessageIDsMutex.Unlock()
+
+	msg, _ = bot.api.Send(msg2)
+	bot.usersToMessageIDsMutex.Lock()
+	bot.usersToMessageIDs[*user2] = msg.MessageID
+	bot.usersToMessageIDsMutex.Unlock()
 }
 
 func (bot *Bot) toggleShowingLegalMoves(query *tgbotapi.CallbackQuery) {
@@ -322,7 +375,18 @@ func (bot *Bot) toggleShowingLegalMoves(query *tgbotapi.CallbackQuery) {
 	bot.db.ToggleLegalMovesAreShown(user.ID)
 
 	if *user == *game.ActiveUser() {
-		bot.api.Send(getEditMsgOfRunningGame(game, query, bot.db.LegalMovesAreShown(user.ID)))
+		msg, replyMarkup := getRunningGameMsgAndReplyMarkup(
+			game,
+			bot.db.LegalMovesAreShown(user.ID),
+			query.InlineMessageID != "",
+		)
+		bot.sendEditMessageTextForGame(
+			msg,
+			replyMarkup,
+			game.WhiteUser(),
+			game.BlackUser(),
+			query.InlineMessageID,
+		)
 	}
 
 	bot.api.Request(tgbotapi.NewCallback(query.ID, "Toggled for you!"))
@@ -358,7 +422,9 @@ func (bot *Bot) handleSurrender(query *tgbotapi.CallbackQuery) {
 
 	winner := game.OpponentOf(loser)
 
-	bot.api.Send(getSurrenderMsg(game, query, winner, loser))
+	msg, replyMarkup := getSurrenderMsgAndReplyMarkup(game, winner, loser, query.InlineMessageID != "")
+	bot.sendEditMessageTextForGame(msg, replyMarkup, winner, loser, query.InlineMessageID)
+
 	bot.api.Request(tgbotapi.NewCallback(query.ID, "You surrendered!"))
 
 	bot.cleanUp(game, query)
@@ -388,7 +454,9 @@ func (bot *Bot) handleEndEarly(query *tgbotapi.CallbackQuery) {
 	bot.usersToLastTimeActiveMutex.Unlock()
 
 	if secondsFromLastActive := time.Now().Sub(lastActiveTime).Seconds(); secondsFromLastActive > 90 {
-		bot.api.Send(getEarlyEndMsg(game, query, user2))
+		msg, replyMarkup := getEarlyEndMsgAndReplyMarkup(game, user2, query.InlineMessageID != "")
+		bot.sendEditMessageTextForGame(msg, replyMarkup, user1, user2, query.InlineMessageID)
+
 		bot.api.Request(tgbotapi.CallbackConfig{
 			CallbackQueryID: query.ID,
 		})
@@ -441,12 +509,17 @@ func (bot *Bot) resendGame(inlineQuery *tgbotapi.InlineQuery) {
 		log.Panicf("Invalid state: usersToCurrentGames does not contain %v.\n", user)
 	}
 
+	msgText, replyMarkup := getRunningGameMsgAndReplyMarkup(
+		game,
+		bot.db.LegalMovesAreShown(game.ActiveUser().ID),
+		true,
+	)
 	msg := tgbotapi.NewInlineQueryResultArticle(
 		uuid.NewString(),
 		"Send down your current game",
-		getGameMsg(game),
+		msgText,
 	)
-	msg.ReplyMarkup = buildGameKeyboard(game, bot.db.LegalMovesAreShown(game.ActiveUser().ID), true)
+	msg.ReplyMarkup = replyMarkup
 
 	bot.api.Request(tgbotapi.InlineConfig{
 		InlineQueryID: inlineQuery.ID,
@@ -494,4 +567,44 @@ func (bot *Bot) handleChosenInlineResult(chosenInlineResult *tgbotapi.ChosenInli
 	bot.inlineMessageIDsToUsers[newID] = user
 	delete(bot.inlineMessageIDsToUsers, oldID)
 	bot.inlineMessageIDsToUsersMutex.Unlock()
+}
+
+func (bot *Bot) sendEditMessageTextForGame(
+	msgText string,
+	replyMarkup *tgbotapi.InlineKeyboardMarkup,
+	user1, user2 *tgbotapi.User,
+	inlineMessageID string,
+) {
+	if inlineMessageID != "" {
+		msg := tgbotapi.EditMessageTextConfig{
+			BaseEdit: tgbotapi.BaseEdit{
+				InlineMessageID: inlineMessageID,
+				ReplyMarkup:     replyMarkup,
+			},
+			Text: msgText,
+		}
+		bot.api.Send(msg)
+		return
+	}
+
+	bot.usersToMessageIDsMutex.Lock()
+	messageID1 := bot.usersToMessageIDs[*user1]
+	messageID2 := bot.usersToMessageIDs[*user2]
+	bot.usersToMessageIDsMutex.Unlock()
+
+	msg1 := tgbotapi.NewEditMessageTextAndMarkup(
+		user1.ID,
+		messageID1,
+		msgText,
+		*replyMarkup,
+	)
+	msg2 := tgbotapi.NewEditMessageTextAndMarkup(
+		user2.ID,
+		messageID2,
+		msgText,
+		*replyMarkup,
+	)
+
+	bot.api.Send(msg1)
+	bot.api.Send(msg2)
 }
