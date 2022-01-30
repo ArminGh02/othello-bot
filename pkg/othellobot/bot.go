@@ -31,7 +31,7 @@ type Bot struct {
 	waitingPlayer                chan *tgbotapi.User
 }
 
-func New(token string, mongodbURI string) *Bot {
+func New(token, mongodbURI string) *Bot {
 	db := database.New(mongodbURI)
 	return &Bot{
 		token:                   token,
