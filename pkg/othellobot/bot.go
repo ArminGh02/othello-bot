@@ -290,6 +290,12 @@ func (bot *Bot) playWithRandomOpponent(query *tgbotapi.CallbackQuery) {
 
 	log.Printf("Started %s.\n", game)
 
+	now := time.Now()
+	bot.usersToLastTimeActiveMutex.Lock()
+	bot.usersToLastTimeActive[*user1] = now
+	bot.usersToLastTimeActive[*user2] = now
+	bot.usersToLastTimeActiveMutex.Unlock()
+
 	bot.usersToCurrentGamesMutex.Lock()
 	defer bot.usersToCurrentGamesMutex.Unlock()
 
