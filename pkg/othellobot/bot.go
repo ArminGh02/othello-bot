@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"regexp"
+	"strings"
 	"sync"
 	"time"
 
@@ -30,6 +31,8 @@ type Bot struct {
 	usersToLastTimeActiveMutex   sync.Mutex
 	usersToMessageIDs            map[tgbotapi.User]int
 	usersToMessageIDsMutex       sync.Mutex
+	usersToChatBuddy             map[tgbotapi.User]*tgbotapi.User
+	usersToChatBuddyMutex        sync.Mutex
 	waitingPlayer                chan *tgbotapi.User
 }
 
@@ -43,6 +46,8 @@ func New(token, mongodbURI string) *Bot {
 		gamesToInlineMessageIDs: make(map[*othellogame.Game]string),
 		usersToCurrentGames:     make(map[tgbotapi.User]*othellogame.Game),
 		usersToLastTimeActive:   make(map[tgbotapi.User]time.Time),
+		usersToMessageIDs:       make(map[tgbotapi.User]int),
+		usersToChatBuddy:        make(map[tgbotapi.User]*tgbotapi.User),
 		waitingPlayer:           make(chan *tgbotapi.User, 1),
 	}
 }
@@ -85,6 +90,18 @@ func (bot *Bot) handleMessage(message *tgbotapi.Message) {
 		bot.handleCommand(message)
 		return
 	}
+
+	if strings.HasPrefix(message.Text, "End chat with") {
+		bot.usersToChatBuddyMutex.Lock()
+		delete(bot.usersToChatBuddy, *message.From)
+		bot.usersToChatBuddyMutex.Unlock()
+
+		msg := tgbotapi.NewMessage(message.From.ID, "Chat ended.")
+		msg.ReplyMarkup = buildMainKeyboard()
+		bot.api.Send(msg)
+		return
+	}
+
 	switch message.Text {
 	case newGameButtonText:
 		bot.askGameMode(message)
@@ -94,6 +111,23 @@ func (bot *Bot) handleMessage(message *tgbotapi.Message) {
 		bot.showProfile(message)
 	case helpButtonText:
 		bot.showHelp(message)
+	default:
+		user1 := message.From
+
+		bot.usersToChatBuddyMutex.Lock()
+		user2, ok := bot.usersToChatBuddy[*user1]
+		if !ok {
+			bot.showHelp(message)
+			break
+		}
+		bot.usersToChatBuddyMutex.Unlock()
+
+		msg := fmt.Sprintf(
+			"📬 Message from %s:\n\n%s",
+			util.FirstNameElseLastName(user1),
+			message.Text,
+		)
+		bot.api.Send(tgbotapi.NewMessage(user2.ID, msg))
 	}
 }
 
@@ -168,6 +202,8 @@ func (bot *Bot) handleCallbackQuery(query *tgbotapi.CallbackQuery) {
 		bot.handleEndEarly(query)
 	case "gameOver":
 		bot.api.Request(tgbotapi.NewCallback(query.ID, "Game is over!"))
+	case "chat":
+		bot.startChatBetweenOpponents(query)
 	}
 }
 
@@ -463,10 +499,28 @@ func (bot *Bot) handleEndEarly(query *tgbotapi.CallbackQuery) {
 	} else {
 		msg := fmt.Sprintf(
 			"You can end the game if your opponent doesn't place a disk for %d seconds.",
-			90 - int(secondsFromLastActive),
+			90-int(secondsFromLastActive),
 		)
 		bot.api.Request(tgbotapi.NewCallback(query.ID, msg))
 	}
+}
+
+func (bot *Bot) startChatBetweenOpponents(query *tgbotapi.CallbackQuery) {
+	user1 := query.From
+	user2 := bot.opponentOf(user1)
+
+	msg := tgbotapi.NewMessage(user1.ID, "Chat with your opponent:")
+	buttonText := fmt.Sprint("End chat with", util.FirstNameElseLastName(user2))
+	msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(buttonText),
+		),
+	)
+	bot.api.Send(msg)
+
+	bot.usersToChatBuddyMutex.Lock()
+	bot.usersToChatBuddy[*user1] = user2
+	bot.usersToChatBuddyMutex.Unlock()
 }
 
 func (bot *Bot) handleInlineQuery(inlineQuery *tgbotapi.InlineQuery) {
@@ -607,4 +661,15 @@ func (bot *Bot) sendEditMessageTextForGame(
 
 	bot.api.Send(msg1)
 	bot.api.Send(msg2)
+}
+
+func (bot *Bot) opponentOf(user *tgbotapi.User) *tgbotapi.User {
+	bot.usersToCurrentGamesMutex.Lock()
+	defer bot.usersToCurrentGamesMutex.Unlock()
+
+	game, ok := bot.usersToCurrentGames[*user]
+	if !ok {
+		log.Panicf("Invalid state: usersToCurrentGames does not contain %v.\n", user)
+	}
+	return game.OpponentOf(user)
 }
