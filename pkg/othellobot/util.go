@@ -38,7 +38,7 @@ func getGameOverMsgAndReplyMarkup(
 		msg = fmt.Sprintf(
 			"%s%s WON! %d to %d! 🔥",
 			game.WinnerColor(),
-			winner.FirstName,
+			util.FirstNameElseLastName(winner),
 			int(math.Max(float64(game.WhiteDisks()), float64(game.BlackDisks()))),
 			int(math.Min(float64(game.WhiteDisks()), float64(game.BlackDisks()))),
 		)
