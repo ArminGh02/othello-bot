@@ -646,18 +646,8 @@ func (bot *Bot) sendEditMessageTextForGame(
 	messageID2 := bot.usersToMessageIDs[*user2]
 	bot.usersToMessageIDsMutex.Unlock()
 
-	msg1 := tgbotapi.NewEditMessageTextAndMarkup(
-		user1.ID,
-		messageID1,
-		msgText,
-		*replyMarkup,
-	)
-	msg2 := tgbotapi.NewEditMessageTextAndMarkup(
-		user2.ID,
-		messageID2,
-		msgText,
-		*replyMarkup,
-	)
+	msg1 := tgbotapi.NewEditMessageTextAndMarkup(user1.ID, messageID1, msgText, *replyMarkup)
+	msg2 := tgbotapi.NewEditMessageTextAndMarkup(user2.ID, messageID2, msgText, *replyMarkup)
 
 	bot.api.Send(msg1)
 	bot.api.Send(msg2)
