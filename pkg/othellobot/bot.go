@@ -117,7 +117,6 @@ func (bot *Bot) handleMessage(message *tgbotapi.Message) {
 		bot.usersToChatBuddyMutex.Lock()
 		user2, ok := bot.usersToChatBuddy[*user1]
 		if !ok {
-			bot.showHelp(message)
 			break
 		}
 		bot.usersToChatBuddyMutex.Unlock()
@@ -510,7 +509,7 @@ func (bot *Bot) startChatBetweenOpponents(query *tgbotapi.CallbackQuery) {
 	user2 := bot.opponentOf(user1)
 
 	msg := tgbotapi.NewMessage(user1.ID, "Chat with your opponent:")
-	buttonText := fmt.Sprint("End chat with", util.FirstNameElseLastName(user2))
+	buttonText := fmt.Sprint("End chat with ", util.FirstNameElseLastName(user2))
 	msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(
 		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton(buttonText),
