@@ -98,7 +98,12 @@ func (bot *Bot) handleMessage(message *tgbotapi.Message) {
 
 		msg := tgbotapi.NewMessage(message.From.ID, "Chat ended.")
 		msg.ReplyMarkup = buildMainKeyboard()
-		bot.api.Send(msg)
+		_, err := bot.api.Send(msg)
+		if err != nil {
+			log.Panicln(err)
+		} else {
+			log.Println("message sent")
+		}
 		return
 	}
 
@@ -148,7 +153,7 @@ func (bot *Bot) handleCommand(message *tgbotapi.Message) {
 			bot.scoreboard.Insert(bot.db.Find(user.ID))
 		}
 
-		log.Println("Bot started by", user)
+		log.Printf("Bot started by %v.", user)
 	default:
 		msgText := fmt.Sprintf("Sorry! %s is not recognized as a command.", command)
 		bot.api.Send(tgbotapi.NewMessage(message.Chat.ID, msgText))
