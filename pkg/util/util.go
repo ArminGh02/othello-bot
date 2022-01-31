@@ -142,7 +142,8 @@ func (s *Scoreboard) indexOf(userID int64) int {
 			return i
 		}
 	}
-	panic("An attempt was made to retrieve the index of a user that was not inserted into scoreboard.")
+	panic("An attempt was made to retrieve the index of a" +
+		" user that was not inserted into scoreboard.")
 }
 
 func (s *Scoreboard) RankOf(userID int64) int {
@@ -160,7 +161,8 @@ func (s *Scoreboard) RankOf(userID int64) int {
 			return rank
 		}
 	}
-	panic("An attempt was made to retrieve the rank of a user that was not inserted into scoreboard.")
+	panic("An attempt was made to retrieve the rank of" +
+		" a user that was not inserted into scoreboard.")
 }
 
 func (s *Scoreboard) String() string {
@@ -174,16 +176,24 @@ func (s *Scoreboard) String() string {
 		}
 		switch rank {
 		case 1:
-			str := fmt.Sprintf("1. %s 🥇 Score: %d\n", s.scoreboard[i].Name, s.scoreboard[i].Score())
+			str := fmt.Sprintf(
+				"1. %s 🥇 Score: %d\n",
+				s.scoreboard[i].Name, s.scoreboard[i].Score())
 			sb.WriteString(str)
 		case 2:
-			str := fmt.Sprintf("2. %s 🥈 Score: %d\n", s.scoreboard[i].Name, s.scoreboard[i].Score())
+			str := fmt.Sprintf(
+				"2. %s 🥈 Score: %d\n",
+				s.scoreboard[i].Name, s.scoreboard[i].Score())
 			sb.WriteString(str)
 		case 3:
-			str := fmt.Sprintf("3. %s 🥉 Score: %d\n", s.scoreboard[i].Name, s.scoreboard[i].Score())
+			str := fmt.Sprintf(
+				"3. %s 🥉 Score: %d\n",
+				s.scoreboard[i].Name, s.scoreboard[i].Score())
 			sb.WriteString(str)
 		default:
-			str := fmt.Sprintf("%d. %s Score: %d\n", rank, s.scoreboard[i].Name, s.scoreboard[i].Score())
+			str := fmt.Sprintf(
+				"%d. %s Score: %d\n",
+				rank, s.scoreboard[i].Name, s.scoreboard[i].Score())
 			sb.WriteString(str)
 		}
 	}
