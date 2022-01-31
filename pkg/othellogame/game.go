@@ -221,7 +221,7 @@ func (g *Game) findDirectionsToFlip(where coord.Coord, mustBeEmptyCell bool) []d
 		return res
 	}
 
-	for i := direction.NORTH_WEST; i < direction.COUNT; i++ {
+	for i := direction.NorthWest; i < direction.COUNT; i++ {
 		c := coord.Plus(where, offset[i])
 		if isValidCoord(c, len(g.board)) && g.board[c.Y][c.X] == opponent {
 		loop:
