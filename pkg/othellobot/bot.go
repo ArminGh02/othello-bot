@@ -482,6 +482,13 @@ func (bot *Bot) handleEndEarly(query *tgbotapi.CallbackQuery) {
 
 	game := bot.usersToCurrentGames[*user1]
 
+	if game.IsTurnOf(user1) {
+		bot.api.Request(
+			tgbotapi.NewCallback(query.ID, "You can't end the game in your turn."),
+		)
+		return
+	}
+
 	user2 := game.OpponentOf(user1)
 
 	bot.usersToLastTimeActiveMutex.Lock()
