@@ -22,16 +22,16 @@ type Bot struct {
 	db                           *database.DBHandler
 	scoreboard                   util.Scoreboard
 	inlineMessageIDsToUsers      map[string]*tgbotapi.User
-	inlineMessageIDsToUsersMutex sync.Mutex
 	gamesToInlineMessageIDs      map[*othellogame.Game]string
-	gamesToInlineMessageIDsMutex sync.Mutex
 	usersToCurrentGames          map[tgbotapi.User]*othellogame.Game
-	usersToCurrentGamesMutex     sync.Mutex
 	usersToLastTimeActive        map[tgbotapi.User]time.Time
-	usersToLastTimeActiveMutex   sync.Mutex
 	usersToMessageIDs            map[tgbotapi.User]int
-	usersToMessageIDsMutex       sync.Mutex
 	usersToChatBuddy             map[tgbotapi.User]*tgbotapi.User
+	inlineMessageIDsToUsersMutex sync.Mutex
+	gamesToInlineMessageIDsMutex sync.Mutex
+	usersToCurrentGamesMutex     sync.Mutex
+	usersToLastTimeActiveMutex   sync.Mutex
+	usersToMessageIDsMutex       sync.Mutex
 	usersToChatBuddyMutex        sync.Mutex
 	waitingPlayer                chan *tgbotapi.User
 }
