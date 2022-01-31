@@ -56,7 +56,7 @@ func New(uri string) *DBHandler {
 	}
 	coll := client.Database("othello_bot").Collection("players")
 
-	defer log.Println("Connected to MongoDB")
+	defer log.Println("Connected to MongoDB.")
 
 	return &DBHandler{
 		client: client,
