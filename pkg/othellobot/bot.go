@@ -409,7 +409,7 @@ func (bot *Bot) toggleShowingLegalMoves(query *tgbotapi.CallbackQuery) {
 
 	bot.db.ToggleLegalMovesAreShown(user.ID)
 
-	if *user == *game.ActiveUser() {
+	if game.IsTurnOf(user) {
 		msg, replyMarkup := getRunningGameMsgAndReplyMarkup(
 			game,
 			bot.db.LegalMovesAreShown(user.ID),

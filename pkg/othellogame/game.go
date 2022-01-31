@@ -185,12 +185,12 @@ func (g *Game) PlaceDisk(where coord.Coord, user *tgbotapi.User) error {
 	return nil
 }
 
-func (g *Game) isTurnOf(user *tgbotapi.User) bool {
+func (g *Game) IsTurnOf(user *tgbotapi.User) bool {
 	return *g.ActiveUser() == *user
 }
 
 func (g *Game) checkPlacingDisk(where coord.Coord, user *tgbotapi.User) error {
-	if !g.isTurnOf(user) {
+	if !g.IsTurnOf(user) {
 		return fmt.Errorf("It's not your turn!")
 	}
 	if g.board[where.Y][where.X] != cell.Empty {
