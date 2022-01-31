@@ -489,7 +489,7 @@ func (bot *Bot) handleEndEarly(query *tgbotapi.CallbackQuery) {
 	lastActiveTime := bot.usersToLastTimeActive[*user2]
 	bot.usersToLastTimeActiveMutex.Unlock()
 
-	if secondsFromLastActive := time.Now().Sub(lastActiveTime).Seconds(); secondsFromLastActive > 90 {
+	if secondsFromLastActive := time.Since(lastActiveTime).Seconds(); secondsFromLastActive > 90 {
 		msg, replyMarkup := getEarlyEndMsgAndReplyMarkup(game, user2, query.InlineMessageID != "")
 		bot.sendEditMessageTextForGame(msg, replyMarkup, user1, user2, query.InlineMessageID)
 
