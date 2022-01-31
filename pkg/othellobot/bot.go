@@ -98,12 +98,7 @@ func (bot *Bot) handleMessage(message *tgbotapi.Message) {
 
 		msg := tgbotapi.NewMessage(message.From.ID, "Chat ended.")
 		msg.ReplyMarkup = buildMainKeyboard()
-		_, err := bot.api.Send(msg)
-		if err != nil {
-			log.Panicln(err)
-		} else {
-			log.Println("message sent")
-		}
+		bot.api.Send(msg)
 		return
 	}
 
