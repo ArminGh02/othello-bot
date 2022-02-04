@@ -1,6 +1,6 @@
 package direction
 
-const COUNT = 8
+const Count = 8
 
 type Direction int
 

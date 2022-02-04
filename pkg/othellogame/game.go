@@ -13,7 +13,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-var offset = [direction.COUNT]coord.Coord{
+var offset = [direction.Count]coord.Coord{
 	{X: -1, Y: -1},
 	{X: 0, Y: -1},
 	{X: 1, Y: -1},
@@ -215,13 +215,13 @@ func (g *Game) flipDisks(where coord.Coord) {
 
 func (g *Game) findDirectionsToFlip(where coord.Coord, mustBeEmptyCell bool) []direction.Direction {
 	opponent := g.turn.Cell().Reversed()
-	res := make([]direction.Direction, 0, direction.COUNT)
+	res := make([]direction.Direction, 0, direction.Count)
 
 	if mustBeEmptyCell && g.board[where.Y][where.X] != cell.Empty {
 		return res
 	}
 
-	for i := direction.NorthWest; i < direction.COUNT; i++ {
+	for i := direction.NorthWest; i < direction.Count; i++ {
 		c := coord.Plus(where, offset[i])
 		if isValidCoord(c, len(g.board)) && g.board[c.Y][c.X] == opponent {
 		loop:
