@@ -44,12 +44,12 @@ func (doc *PlayerDoc) Score() int {
 	return doc.Wins * 3 - doc.Losses
 }
 
-type DBHandler struct {
+type Handler struct {
 	client *mongo.Client
 	coll   *mongo.Collection
 }
 
-func New(uri string) *DBHandler {
+func New(uri string) *Handler {
 	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(uri))
 	if err != nil {
 		log.Fatalln(err)
@@ -58,13 +58,13 @@ func New(uri string) *DBHandler {
 
 	defer log.Println("Connected to MongoDB.")
 
-	return &DBHandler{
+	return &Handler{
 		client: client,
 		coll:   coll,
 	}
 }
 
-func (db *DBHandler) AddPlayer(userID int64, name string) (added bool) {
+func (db *Handler) AddPlayer(userID int64, name string) (added bool) {
 	err := db.coll.FindOne(context.TODO(), bson.D{{"user_id", userID}}).Err()
 	if err != mongo.ErrNoDocuments {
 		return false
@@ -78,7 +78,7 @@ func (db *DBHandler) AddPlayer(userID int64, name string) (added bool) {
 	return true
 }
 
-func (db *DBHandler) GetAllPlayers() []PlayerDoc {
+func (db *Handler) GetAllPlayers() []PlayerDoc {
 	res := make([]PlayerDoc, 0)
 	cur, err := db.coll.Find(context.TODO(), bson.D{})
 	handleErr(err)
@@ -93,11 +93,11 @@ func (db *DBHandler) GetAllPlayers() []PlayerDoc {
 	return res
 }
 
-func (db *DBHandler) LegalMovesAreShown(userID int64) bool {
+func (db *Handler) LegalMovesAreShown(userID int64) bool {
 	return db.Find(userID).LegalMovesAreShown
 }
 
-func (db *DBHandler) ToggleLegalMovesAreShown(userID int64) {
+func (db *Handler) ToggleLegalMovesAreShown(userID int64) {
 	update := bson.D{
 		{"$set", bson.D{
 			{"legal_moves_are_shown", !db.LegalMovesAreShown(userID)},
@@ -107,19 +107,19 @@ func (db *DBHandler) ToggleLegalMovesAreShown(userID int64) {
 	handleErr(err)
 }
 
-func (db *DBHandler) IncrementWins(userID int64) {
+func (db *Handler) IncrementWins(userID int64) {
 	db.incrementProperty("wins", userID)
 }
 
-func (db *DBHandler) IncrementLosses(userID int64) {
+func (db *Handler) IncrementLosses(userID int64) {
 	db.incrementProperty("losses", userID)
 }
 
-func (db *DBHandler) IncrementDraws(userID int64) {
+func (db *Handler) IncrementDraws(userID int64) {
 	db.incrementProperty("draws", userID)
 }
 
-func (db *DBHandler) incrementProperty(propertyName string, userID int64) {
+func (db *Handler) incrementProperty(propertyName string, userID int64) {
 	update := bson.D{
 		{"$inc", bson.D{
 			{propertyName, 1},
@@ -129,14 +129,14 @@ func (db *DBHandler) incrementProperty(propertyName string, userID int64) {
 	handleErr(err)
 }
 
-func (db *DBHandler) Find(userID int64) *PlayerDoc {
+func (db *Handler) Find(userID int64) *PlayerDoc {
 	var doc PlayerDoc
 	err := db.coll.FindOne(context.TODO(), bson.D{{"user_id", userID}}).Decode(&doc)
 	handleErr(err)
 	return &doc
 }
 
-func (db *DBHandler) Disconnect() {
+func (db *Handler) Disconnect() {
 	if err := db.client.Disconnect(context.TODO()); err != nil {
 		log.Panicln(err)
 	}

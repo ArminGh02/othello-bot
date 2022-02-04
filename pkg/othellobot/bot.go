@@ -19,7 +19,7 @@ import (
 type Bot struct {
 	token                        string
 	api                          *tgbotapi.BotAPI
-	db                           *database.DBHandler
+	db                           *database.Handler
 	scoreboard                   util.Scoreboard
 	inlineMessageIDsToUsers      map[string]*tgbotapi.User
 	gamesToInlineMessageIDs      map[*othellogame.Game]string
