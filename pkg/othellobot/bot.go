@@ -495,7 +495,7 @@ func (bot *Bot) handleEndEarly(query *tgbotapi.CallbackQuery) {
 	lastActiveTime := bot.usersToLastTimeActive[*user2]
 	bot.usersToLastTimeActiveMutex.Unlock()
 
-	if secondsFromLastActive := time.Since(lastActiveTime).Seconds(); secondsFromLastActive > 90 {
+	if secondsSinceLastActive := time.Since(lastActiveTime).Seconds(); secondsSinceLastActive > 90 {
 		msg, replyMarkup := getEarlyEndMsgAndReplyMarkup(game, user2, query.InlineMessageID != "")
 		bot.sendEditMessageTextForGame(msg, replyMarkup, user1, user2, query.InlineMessageID)
 
@@ -505,7 +505,7 @@ func (bot *Bot) handleEndEarly(query *tgbotapi.CallbackQuery) {
 	} else {
 		msg := fmt.Sprintf(
 			"You can end the game if your opponent doesn't place a disk for %d seconds.",
-			90-int(secondsFromLastActive),
+			90-int(secondsSinceLastActive),
 		)
 		bot.api.Request(tgbotapi.NewCallback(query.ID, msg))
 	}
