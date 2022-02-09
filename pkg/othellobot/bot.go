@@ -179,7 +179,7 @@ func (bot *Bot) showHelp(message *tgbotapi.Message) {
 func (bot *Bot) handleCallbackQuery(query *tgbotapi.CallbackQuery) {
 	data := query.Data
 
-	if match, _ := regexp.MatchString("^\\d+_\\d+$", data); match {
+	if match, _ := regexp.MatchString(`^\d+_\d+$`, data); match {
 		bot.placeDisk(query)
 		return
 	}
