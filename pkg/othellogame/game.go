@@ -162,6 +162,10 @@ func (g *Game) EndInlineKeyboard() [][]tgbotapi.InlineKeyboardButton {
 	return keyboard
 }
 
+func (g *Game) SetTurn(white bool) {
+	g.turn = turn.Turn(white)
+}
+
 func (g *Game) PlaceDisk(where coord.Coord, user *tgbotapi.User) error {
 	if err := g.checkPlacingDisk(where, user); err != nil {
 		return err
