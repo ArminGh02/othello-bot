@@ -166,7 +166,11 @@ func (g *Game) PlaceDisk(where coord.Coord, user *tgbotapi.User) error {
 	if err := g.checkPlacingDisk(where, user); err != nil {
 		return err
 	}
+	g.PlaceDiskUnchecked(where)
+	return nil
+}
 
+func (g *Game) PlaceDiskUnchecked(where coord.Coord) {
 	g.board[where.Y][where.X] = g.turn.Cell()
 	g.flipDisks(where)
 
@@ -181,8 +185,6 @@ func (g *Game) PlaceDisk(where coord.Coord, user *tgbotapi.User) error {
 	if g.placeableCoords.IsEmpty() {
 		g.ended = true
 	}
-
-	return nil
 }
 
 func (g *Game) IsTurnOf(user *tgbotapi.User) bool {
