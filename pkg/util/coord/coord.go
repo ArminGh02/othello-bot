@@ -19,6 +19,6 @@ func Plus(a, b Coord) Coord {
 	}
 }
 
-func (this *Coord) Plus(other Coord) {
-	*this = Plus(*this, other)
+func (c *Coord) Plus(other Coord) {
+	*c = Plus(*c, other)
 }
