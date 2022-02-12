@@ -138,6 +138,11 @@ func (bot *Bot) handleCommand(message *tgbotapi.Message) {
 	case "start":
 		user := message.From
 
+		if arg := message.CommandArguments(); strings.HasPrefix(arg, "replay") {
+			bot.sendGameReplay(user, arg)
+			break
+		}
+
 		msgText := fmt.Sprintf("Hi %s\\!\n"+
 			"I am *Othello Bot*\\.\n"+
 			"Have fun playing Othello strategic board game,\n"+
