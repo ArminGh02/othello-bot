@@ -1,14 +1,17 @@
 package othellobot
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 	"regexp"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/ArminGh02/othello-bot/pkg/database"
+	"github.com/ArminGh02/othello-bot/pkg/gifmaker"
 	"github.com/ArminGh02/othello-bot/pkg/othellogame"
 	"github.com/ArminGh02/othello-bot/pkg/util"
 	"github.com/ArminGh02/othello-bot/pkg/util/coord"
@@ -179,6 +182,11 @@ func (bot *Bot) showHelp(message *tgbotapi.Message) {
 func (bot *Bot) handleCallbackQuery(query *tgbotapi.CallbackQuery) {
 	data := query.Data
 
+	if strings.HasPrefix(data, "replay") {
+		bot.sendGameReplay(query.From, query.Data)
+		return
+	}
+
 	if match, _ := regexp.MatchString(`^\d+_\d+$`, data); match {
 		bot.placeDisk(query)
 		return
@@ -203,6 +211,33 @@ func (bot *Bot) handleCallbackQuery(query *tgbotapi.CallbackQuery) {
 		bot.api.Request(tgbotapi.NewCallback(query.ID, "Game is over!"))
 	case "chat":
 		bot.startChatBetweenOpponents(query)
+	}
+}
+
+func (bot *Bot) sendGameReplay(user *tgbotapi.User, data string) {
+	data = strings.TrimPrefix(data, "replay")
+
+	var whiteStarted bool
+	if data[0] == 'w' {
+		whiteStarted = true
+	} else {
+		whiteStarted = false
+	}
+
+	var movesSequence []coord.Coord
+	err := json.Unmarshal([]byte(data[1:]), &movesSequence)
+	if err != nil {
+		log.Panicln(err)
+	}
+
+	gifFilename := uuid.NewString() + ".gif"
+	gifmaker.Make(gifFilename, movesSequence, whiteStarted)
+
+	bot.api.Send(tgbotapi.NewAnimation(user.ID, tgbotapi.FilePath(gifFilename)))
+
+	err = os.Remove(gifFilename)
+	if err != nil {
+		log.Panicln(err)
 	}
 }
 
