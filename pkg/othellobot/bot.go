@@ -298,7 +298,11 @@ func (bot *Bot) handleGameEnd(game *othellogame.Game, query *tgbotapi.CallbackQu
 		bot.scoreboard.UpdateRankOf(loser.ID, 0, 1)
 	}
 
-	msg, replyMarkup := getGameOverMsgAndReplyMarkup(game, query.InlineMessageID != "")
+	msg, replyMarkup := getGameOverMsgAndReplyMarkup(
+		game,
+		bot.api.Self.UserName,
+		query.InlineMessageID != "",
+	)
 	bot.sendEditMessageTextForGame(
 		msg,
 		replyMarkup,
@@ -497,7 +501,13 @@ func (bot *Bot) handleSurrender(query *tgbotapi.CallbackQuery) {
 
 	winner := game.OpponentOf(loser)
 
-	msg, replyMarkup := getSurrenderMsgAndReplyMarkup(game, winner, loser, query.InlineMessageID != "")
+	msg, replyMarkup := getSurrenderMsgAndReplyMarkup(
+		game,
+		winner,
+		loser,
+		bot.api.Self.UserName,
+		query.InlineMessageID != "",
+	)
 	bot.sendEditMessageTextForGame(msg, replyMarkup, winner, loser, query.InlineMessageID)
 
 	bot.api.Request(tgbotapi.NewCallback(query.ID, "You surrendered!"))
@@ -536,8 +546,19 @@ func (bot *Bot) handleEndEarly(query *tgbotapi.CallbackQuery) {
 	bot.usersToLastTimeActiveMutex.Unlock()
 
 	if secondsSinceLastActive := time.Since(lastActiveTime).Seconds(); secondsSinceLastActive > 90 {
-		msg, replyMarkup := getEarlyEndMsgAndReplyMarkup(game, user2, query.InlineMessageID != "")
-		bot.sendEditMessageTextForGame(msg, replyMarkup, user1, user2, query.InlineMessageID)
+		msg, replyMarkup := getEarlyEndMsgAndReplyMarkup(
+			game,
+			user2,
+			bot.api.Self.UserName,
+			query.InlineMessageID != "",
+		)
+		bot.sendEditMessageTextForGame(
+			msg,
+			replyMarkup,
+			user1,
+			user2,
+			query.InlineMessageID,
+		)
 
 		bot.api.Request(tgbotapi.CallbackConfig{
 			CallbackQueryID: query.ID,
