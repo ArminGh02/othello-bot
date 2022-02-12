@@ -3,7 +3,7 @@ package gifmaker
 import (
 	"image"
 	"image/draw"
-	"image/png"
+	"image/gif"
 	"log"
 	"os"
 
@@ -23,20 +23,34 @@ const (
 )
 
 var (
-	whiteDisk  = readPngImage("resources/white-disk.png")
-	blackDisk  = readPngImage("resources/black-disk.png")
-	boardImage = readPngImage("resources/board.png")
+	whiteDisk  = readPNG("resources/white-disk.png")
+	blackDisk  = readPNG("resources/black-disk.png")
+	boardImage = convertImageToPaletted(readPNG("resources/board.png"))
 )
 
-func Make(movesSequence []coord.Coord, whiteStarts bool) {
+func Make(outputFilename string, movesSequence []coord.Coord, whiteStarts bool) {
 	frames := getGameFrames(movesSequence, whiteStarts)
+	delays := make([]int, len(frames))
+	for i := range delays {
+		delays[i] = 200
+	}
+
+	out, err := os.Create(outputFilename)
+	if err != nil {
+		log.Panicln(err)
+	}
+	gif.EncodeAll(out, &gif.GIF{
+		Image: frames,
+		Delay: delays,
+	})
 }
 
-func getGameFrames(movesSequence []coord.Coord, whiteStarts bool) []image.Image {
+func getGameFrames(movesSequence []coord.Coord, whiteStarts bool) []*image.Paletted {
 	game := othellogame.New(nil, nil)
 	game.SetTurn(whiteStarts)
 
-	res := make([]image.Image, len(movesSequence))
+	res := make([]*image.Paletted, 0, len(movesSequence))
+	res = append(res, boardImage)
 	for _, move := range movesSequence {
 		game.PlaceDiskUnchecked(move)
 		res = append(res, getGameFrame(game))
@@ -44,7 +58,7 @@ func getGameFrames(movesSequence []coord.Coord, whiteStarts bool) []image.Image 
 	return res
 }
 
-func getGameFrame(game *othellogame.Game) image.Image {
+func getGameFrame(game *othellogame.Game) *image.Paletted {
 	getDiskImage := func(white bool) image.Image {
 		if white {
 			return whiteDisk
@@ -72,17 +86,4 @@ func getGameFrame(game *othellogame.Game) image.Image {
 		}
 	}
 	return res
-}
-
-func readPngImage(filename string) image.Image {
-	f, err := os.Open(filename)
-	if err != nil {
-		log.Panicln(err)
-	}
-
-	img, err := png.Decode(f)
-	if err != nil {
-		log.Panicln(err)
-	}
-	return img
 }
