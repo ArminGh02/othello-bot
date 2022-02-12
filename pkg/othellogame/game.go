@@ -31,6 +31,7 @@ type Game struct {
 	turn            turn.Turn
 	placeableCoords util.CoordSet
 	ended           bool
+	whiteStarted    bool
 	movesSequence   []coord.Coord
 }
 
@@ -42,6 +43,8 @@ func New(user1, user2 *tgbotapi.User) *Game {
 		placeableCoords: util.NewCoordSet(),
 		movesSequence:   make([]coord.Coord, 0, boardSize*boardSize-4),
 	}
+
+	g.whiteStarted = g.turn == turn.WHITE
 
 	mid := len(g.board)/2 - 1
 	g.board[mid][mid] = cell.White
@@ -172,12 +175,19 @@ func (g *Game) EndInlineKeyboard() [][]tgbotapi.InlineKeyboardButton {
 	return keyboard
 }
 
+func (g *Game) WhiteStarted() bool {
+	return g.whiteStarted
+}
+
 func (g *Game) MovesSequence() []coord.Coord {
 	return g.movesSequence
 }
 
 func (g *Game) SetTurn(white bool) {
 	g.turn = turn.Turn(white)
+	if len(g.movesSequence) == 0 {
+		g.whiteStarted = white
+	}
 }
 
 func (g *Game) PlaceDisk(where coord.Coord, user *tgbotapi.User) error {
