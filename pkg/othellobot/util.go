@@ -1,7 +1,9 @@
 package othellobot
 
 import (
+	"encoding/json"
 	"fmt"
+	"log"
 	"math"
 
 	"github.com/ArminGh02/othello-bot/pkg/consts"
@@ -30,6 +32,7 @@ func getRunningGameMsgAndReplyMarkup(
 
 func getGameOverMsgAndReplyMarkup(
 	game *othellogame.Game,
+	botUsername string,
 	inline bool,
 ) (msg string, replyMarkup *tgbotapi.InlineKeyboardMarkup) {
 	if winner := game.Winner(); winner == nil {
@@ -43,12 +46,13 @@ func getGameOverMsgAndReplyMarkup(
 			int(math.Min(float64(game.WhiteDisks()), float64(game.BlackDisks()))),
 		)
 	}
-	return msg, buildGameOverKeyboard(game, inline)
+	return msg, buildGameOverKeyboard(game, botUsername, inline)
 }
 
 func getSurrenderMsgAndReplyMarkup(
 	game *othellogame.Game,
 	winner, loser *tgbotapi.User,
+	botUsername string,
 	inline bool,
 ) (msg string, replyMarkup *tgbotapi.InlineKeyboardMarkup) {
 	msg = fmt.Sprintf(
@@ -56,19 +60,20 @@ func getSurrenderMsgAndReplyMarkup(
 		util.FirstNameElseLastName(loser),
 		util.FirstNameElseLastName(winner),
 	)
-	return msg, buildGameOverKeyboard(game, inline)
+	return msg, buildGameOverKeyboard(game, botUsername, inline)
 }
 
 func getEarlyEndMsgAndReplyMarkup(
 	game *othellogame.Game,
 	loser *tgbotapi.User,
+	botUsername string,
 	inline bool,
 ) (msg string, replyMarkup *tgbotapi.InlineKeyboardMarkup) {
 	msg = fmt.Sprintf(
 		"Game ended due to inactivity of %s.",
 		util.FirstNameElseLastName(loser),
 	)
-	return msg, buildGameOverKeyboard(game, inline)
+	return msg, buildGameOverKeyboard(game, botUsername, inline)
 }
 
 func buildGameKeyboard(
@@ -125,18 +130,41 @@ func buildGameKeyboard(
 	}
 }
 
-func buildGameOverKeyboard(game *othellogame.Game, inline bool) *tgbotapi.InlineKeyboardMarkup {
-	var button tgbotapi.InlineKeyboardButton
+func buildGameOverKeyboard(
+	game *othellogame.Game,
+	botUsername string,
+	inline bool,
+) *tgbotapi.InlineKeyboardMarkup {
+	button2data := "replay"
+	if game.WhiteStarted() {
+		button2data += "w"
+	} else {
+		button2data += "b"
+	}
+	b, err := json.Marshal(game.MovesSequence())
+	if err != nil {
+		log.Panicln(err)
+	}
+	button2data += string(b)
+
+	var button1, button2 tgbotapi.InlineKeyboardButton
 	if inline {
 		inlineQuery := ""
-		button = tgbotapi.InlineKeyboardButton{
+		button1 = tgbotapi.InlineKeyboardButton{
 			Text:                         "🔄 Play again",
 			SwitchInlineQueryCurrentChat: &inlineQuery,
 		}
+
+		url := fmt.Sprintf("https://telegram.me/%s?start=%s", botUsername, button2data)
+		button2 = tgbotapi.InlineKeyboardButton{
+			Text: "🎞 Game replay",
+			URL:  &url,
+		}
 	} else {
-		button = tgbotapi.NewInlineKeyboardButtonData("🔄 Rematch", "rematch")
+		button1 = tgbotapi.NewInlineKeyboardButtonData("🔄 Rematch", "rematch")
+		button2 = tgbotapi.NewInlineKeyboardButtonData("🎞 Game replay", button2data)
 	}
-	row := tgbotapi.NewInlineKeyboardRow(button)
+	row := tgbotapi.NewInlineKeyboardRow(button1, button2)
 	return &tgbotapi.InlineKeyboardMarkup{
 		InlineKeyboard: append(game.EndInlineKeyboard(), row),
 	}
