@@ -68,7 +68,7 @@ func (g *Game) String() string {
 func (g *Game) Board() [][]cell.Cell {
 	res := make([][]cell.Cell, len(g.board))
 	for i := range g.board {
-		res = append(res, g.board[i][:])
+		res[i] = g.board[i][:]
 	}
 	return res
 }
