@@ -22,7 +22,7 @@ func readPNG(filename string) image.Image {
 	return img
 }
 
-func convertImageToPaletted(img image.Image) *image.Paletted {
+func imageToPaletted(img image.Image) *image.Paletted {
 	res := image.NewPaletted(img.Bounds(), palette.Plan9)
 	draw.FloydSteinberg.Draw(res, img.Bounds(), img, image.Point{})
 	return res

@@ -26,7 +26,7 @@ const (
 var (
 	whiteDisk  = readPNG("resources/white-disk.png")
 	blackDisk  = readPNG("resources/black-disk.png")
-	boardImage = convertImageToPaletted(readPNG("resources/board.png"))
+	boardImage = imageToPaletted(readPNG("resources/board.png"))
 )
 
 func Make(outputFilename string, movesSequence []coord.Coord, whiteStarts bool) {
