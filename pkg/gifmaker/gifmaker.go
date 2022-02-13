@@ -10,6 +10,7 @@ import (
 	"github.com/ArminGh02/othello-bot/pkg/othellogame"
 	"github.com/ArminGh02/othello-bot/pkg/othellogame/cell"
 	"github.com/ArminGh02/othello-bot/pkg/util/coord"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 const (
@@ -46,7 +47,7 @@ func Make(outputFilename string, movesSequence []coord.Coord, whiteStarts bool) 
 }
 
 func getGameFrames(movesSequence []coord.Coord, whiteStarts bool) []*image.Paletted {
-	game := othellogame.New(nil, nil)
+	game := othellogame.New(&tgbotapi.User{}, &tgbotapi.User{})
 	game.SetTurn(whiteStarts)
 
 	res := make([]*image.Paletted, 0, len(movesSequence))
