@@ -140,7 +140,7 @@ func (bot *Bot) handleCommand(message *tgbotapi.Message) {
 		user := message.From
 
 		if arg := message.CommandArguments(); strings.HasPrefix(arg, "replay") {
-			bot.sendGameReplay(user, arg, false)
+			bot.sendGameReplay(user, arg, true)
 			break
 		}
 
@@ -189,7 +189,7 @@ func (bot *Bot) handleCallbackQuery(query *tgbotapi.CallbackQuery) {
 	data := query.Data
 
 	if strings.HasPrefix(data, "replay") {
-		bot.sendGameReplay(query.From, query.Data, true)
+		bot.sendGameReplay(query.From, query.Data, false)
 		return
 	}
 
