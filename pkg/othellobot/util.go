@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"net/url"
 
 	"github.com/ArminGh02/othello-bot/pkg/consts"
 	"github.com/ArminGh02/othello-bot/pkg/othellogame"
@@ -136,11 +137,13 @@ func buildGameOverKeyboard(
 	inline bool,
 ) *tgbotapi.InlineKeyboardMarkup {
 	button2data := "replay"
+
 	if game.WhiteStarted() {
 		button2data += "w"
 	} else {
 		button2data += "b"
 	}
+
 	b, err := json.Marshal(game.MovesSequence())
 	if err != nil {
 		log.Panicln(err)
@@ -155,7 +158,11 @@ func buildGameOverKeyboard(
 			SwitchInlineQueryCurrentChat: &inlineQuery,
 		}
 
-		url := fmt.Sprintf("https://telegram.me/%s?start=%s", botUsername, button2data)
+		url := fmt.Sprintf(
+			"https://telegram.me/%s?start=%s",
+			botUsername,
+			url.QueryEscape(button2data),
+		)
 		button2 = tgbotapi.InlineKeyboardButton{
 			Text: "🎞 Game replay",
 			URL:  &url,

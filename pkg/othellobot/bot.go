@@ -4,7 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"os"
+	"net/url"
+	// "os"
 	"regexp"
 	"strings"
 	"sync"
@@ -139,7 +140,7 @@ func (bot *Bot) handleCommand(message *tgbotapi.Message) {
 		user := message.From
 
 		if arg := message.CommandArguments(); strings.HasPrefix(arg, "replay") {
-			bot.sendGameReplay(user, arg)
+			bot.sendGameReplay(user, arg, false)
 			break
 		}
 
@@ -188,7 +189,7 @@ func (bot *Bot) handleCallbackQuery(query *tgbotapi.CallbackQuery) {
 	data := query.Data
 
 	if strings.HasPrefix(data, "replay") {
-		bot.sendGameReplay(query.From, query.Data)
+		bot.sendGameReplay(query.From, query.Data, true)
 		return
 	}
 
@@ -219,7 +220,11 @@ func (bot *Bot) handleCallbackQuery(query *tgbotapi.CallbackQuery) {
 	}
 }
 
-func (bot *Bot) sendGameReplay(user *tgbotapi.User, data string) {
+func (bot *Bot) sendGameReplay(user *tgbotapi.User, data string, isURL bool) {
+	if isURL {
+		data, _ = url.QueryUnescape(data)
+	}
+
 	data = strings.TrimPrefix(data, "replay")
 
 	var whiteStarted bool
@@ -240,10 +245,10 @@ func (bot *Bot) sendGameReplay(user *tgbotapi.User, data string) {
 
 	bot.api.Send(tgbotapi.NewAnimation(user.ID, tgbotapi.FilePath(gifFilename)))
 
-	err = os.Remove(gifFilename)
-	if err != nil {
-		log.Panicln(err)
-	}
+	// err = os.Remove(gifFilename)
+	// if err != nil {
+	// 	log.Panicln(err)
+	// }
 }
 
 func (bot *Bot) placeDisk(query *tgbotapi.CallbackQuery) {
