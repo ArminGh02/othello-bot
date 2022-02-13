@@ -40,6 +40,7 @@ func Make(outputFilename string, movesSequence []coord.Coord, whiteStarts bool) 
 	if err != nil {
 		log.Panicln(err)
 	}
+	defer out.Close()
 	gif.EncodeAll(out, &gif.GIF{
 		Image: frames,
 		Delay: delays,
