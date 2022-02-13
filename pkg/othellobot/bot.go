@@ -243,7 +243,10 @@ func (bot *Bot) sendGameReplay(user *tgbotapi.User, data string, isURL bool) {
 	gifFilename := uuid.NewString() + ".gif"
 	gifmaker.Make(gifFilename, movesSequence, whiteStarted)
 
-	bot.api.Send(tgbotapi.NewAnimation(user.ID, tgbotapi.FilePath(gifFilename)))
+	_, err = bot.api.Send(tgbotapi.NewAnimation(user.ID, tgbotapi.FilePath(gifFilename)))
+	if err != nil {
+		log.Panicln(err)
+	}
 
 	// err = os.Remove(gifFilename)
 	// if err != nil {
