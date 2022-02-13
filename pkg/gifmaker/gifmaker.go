@@ -73,7 +73,7 @@ func getGameFrame(game *othellogame.Game) *image.Paletted {
 	for i := range board {
 		for j := range board[i] {
 			if board[i][j] == cell.Empty {
-				break
+				continue
 			}
 
 			x := x0 + j*cellLength
