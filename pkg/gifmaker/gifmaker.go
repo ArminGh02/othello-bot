@@ -52,10 +52,9 @@ func getGameFrames(movesSequence []coord.Coord, whiteStarts bool) []*image.Palet
 	game.SetTurn(whiteStarts)
 
 	res := make([]*image.Paletted, 0, len(movesSequence))
-	res = append(res, boardImage)
 	for _, move := range movesSequence {
-		game.PlaceDiskUnchecked(move)
 		res = append(res, getGameFrame(game))
+		game.PlaceDiskUnchecked(move)
 	}
 	return res
 }
