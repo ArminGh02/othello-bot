@@ -78,26 +78,26 @@ func buildGameKeyboard(
 	game *othellogame.Game,
 	showLegalMoves, inline bool,
 ) *tgbotapi.InlineKeyboardMarkup {
-	var button tgbotapi.InlineKeyboardButton
+	var button1 tgbotapi.InlineKeyboardButton
 	if inline {
-		button = tgbotapi.InlineKeyboardButton{
+		button1 = tgbotapi.InlineKeyboardButton{
 			Text:                         "🔽 Send down",
 			SwitchInlineQueryCurrentChat: &resendQuery,
 		}
 	} else {
-		button = tgbotapi.NewInlineKeyboardButtonData("💬 Chat", "chat")
+		button1 = tgbotapi.NewInlineKeyboardButtonData("💬 Chat", "chat")
 	}
 
-	var buttonText string
+	var button2text string
 	if showLegalMoves {
-		buttonText = "Hide legal moves"
+		button2text = "Hide legal moves"
 	} else {
-		buttonText = "Show legal moves"
+		button2text = "Show legal moves"
 	}
 
 	row2 := tgbotapi.NewInlineKeyboardRow(
-		button,
-		tgbotapi.NewInlineKeyboardButtonData(buttonText, "toggleShowingLegalMoves"),
+		button1,
+		tgbotapi.NewInlineKeyboardButtonData(button2text, "toggleShowingLegalMoves"),
 	)
 
 	row3 := tgbotapi.NewInlineKeyboardRow(
