@@ -79,9 +79,9 @@ func (db *Handler) AddPlayer(userID int64, name string) (added bool) {
 }
 
 func (db *Handler) GetAllPlayers() []PlayerDoc {
-	res := make([]PlayerDoc, 0)
 	cur, err := db.coll.Find(context.TODO(), bson.D{})
 	handleErr(err)
+	res := make([]PlayerDoc, 0)
 	for cur.Next(context.TODO()) {
 		var doc PlayerDoc
 		err := cur.Decode(&doc)
