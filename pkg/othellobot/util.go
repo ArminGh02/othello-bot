@@ -78,24 +78,6 @@ func buildGameKeyboard(
 	game *othellogame.Game,
 	showLegalMoves, inline bool,
 ) *tgbotapi.InlineKeyboardMarkup {
-	whiteProfile := fmt.Sprintf(
-		"%s%s: %d",
-		consts.WhiteDiskEmoji,
-		util.FirstNameElseLastName(game.WhiteUser()),
-		game.WhiteDisks(),
-	)
-	blackProfile := fmt.Sprintf(
-		"%s%s: %d",
-		consts.BlackDiskEmoji,
-		util.FirstNameElseLastName(game.BlackUser()),
-		game.BlackDisks(),
-	)
-
-	row1 := tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData(whiteProfile, "whiteProfile"),
-		tgbotapi.NewInlineKeyboardButtonData(blackProfile, "blackProfile"),
-	)
-
 	var button tgbotapi.InlineKeyboardButton
 	if inline {
 		button = tgbotapi.InlineKeyboardButton{
@@ -123,9 +105,29 @@ func buildGameKeyboard(
 		tgbotapi.NewInlineKeyboardButtonData("🏳️ Surrender", "surrender"),
 	)
 
+	keyboard := append(game.InlineKeyboard(showLegalMoves), buildProfilesRow(game), row2, row3)
 	return &tgbotapi.InlineKeyboardMarkup{
-		InlineKeyboard: append(game.InlineKeyboard(showLegalMoves), row1, row2, row3),
+		InlineKeyboard: keyboard,
 	}
+}
+
+func buildProfilesRow(game *othellogame.Game) []tgbotapi.InlineKeyboardButton {
+	whiteProfile := fmt.Sprintf(
+		"%s%s: %d",
+		consts.WhiteDiskEmoji,
+		util.FirstNameElseLastName(game.WhiteUser()),
+		game.WhiteDisks(),
+	)
+	blackProfile := fmt.Sprintf(
+		"%s%s: %d",
+		consts.BlackDiskEmoji,
+		util.FirstNameElseLastName(game.BlackUser()),
+		game.BlackDisks(),
+	)
+	return tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData(whiteProfile, "whiteProfile"),
+		tgbotapi.NewInlineKeyboardButtonData(blackProfile, "blackProfile"),
+	)
 }
 
 func buildGameOverKeyboard(
@@ -133,6 +135,14 @@ func buildGameOverKeyboard(
 	botUsername string,
 	inline bool,
 ) *tgbotapi.InlineKeyboardMarkup {
+	button2data := "replay"
+	if game.WhiteStarted() {
+		button2data += "w"
+	} else {
+		button2data += "b"
+	}
+	button2data += game.ID()
+
 	var button1, button2 tgbotapi.InlineKeyboardButton
 	if inline {
 		inlineQuery := ""
@@ -141,17 +151,15 @@ func buildGameOverKeyboard(
 			SwitchInlineQueryCurrentChat: &inlineQuery,
 		}
 
-		url := fmt.Sprintf("https://telegram.me/%s?start=replay%s", botUsername, game.ID())
+		url := fmt.Sprintf("https://telegram.me/%s?start=%s", botUsername, button2data)
 		button2 = tgbotapi.NewInlineKeyboardButtonURL("🎞 Game replay", url)
 	} else {
 		button1 = tgbotapi.NewInlineKeyboardButtonData("🔄 Rematch", "rematch")
-
-		data := "replay" + game.ID()
-		button2 = tgbotapi.NewInlineKeyboardButtonData("🎞 Game replay", data)
+		button2 = tgbotapi.NewInlineKeyboardButtonData("🎞 Game replay", button2data)
 	}
 	row := tgbotapi.NewInlineKeyboardRow(button1, button2)
 	return &tgbotapi.InlineKeyboardMarkup{
-		InlineKeyboard: append(game.EndInlineKeyboard(), row),
+		InlineKeyboard: append(game.EndInlineKeyboard(), buildProfilesRow(game), row),
 	}
 }
 
