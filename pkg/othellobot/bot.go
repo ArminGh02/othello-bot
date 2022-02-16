@@ -1,11 +1,9 @@
 package othellobot
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
-	"net/url"
-	// "os"
+	"os"
 	"regexp"
 	"strings"
 	"sync"
@@ -123,10 +121,10 @@ func (bot *Bot) handleMessage(message *tgbotapi.Message) {
 
 		bot.userToChatBuddyMutex.Lock()
 		user2, ok := bot.userToChatBuddy[*user1]
+		bot.userToChatBuddyMutex.Unlock()
 		if !ok {
 			break
 		}
-		bot.userToChatBuddyMutex.Unlock()
 
 		msg := fmt.Sprintf(
 			"📬 Message from %s:\n\n%s",
@@ -143,7 +141,9 @@ func (bot *Bot) handleCommand(message *tgbotapi.Message) {
 		user := message.From
 
 		if arg := message.CommandArguments(); strings.HasPrefix(arg, "replay") {
-			bot.sendGameReplay(user, arg, true)
+			if err := bot.sendGameReplay(user, arg); err != nil {
+				bot.api.Send(tgbotapi.NewMessage(user.ID, err.Error()))
+			}
 			break
 		}
 
@@ -192,7 +192,11 @@ func (bot *Bot) handleCallbackQuery(query *tgbotapi.CallbackQuery) {
 	data := query.Data
 
 	if strings.HasPrefix(data, "replay") {
-		bot.sendGameReplay(query.From, query.Data, false)
+		text := ""
+		if err := bot.sendGameReplay(query.From, query.Data); err != nil {
+			text = err.Error()
+		}
+		bot.api.Request(tgbotapi.NewCallback(query.ID, text))
 		return
 	}
 
@@ -223,12 +227,16 @@ func (bot *Bot) handleCallbackQuery(query *tgbotapi.CallbackQuery) {
 	}
 }
 
-func (bot *Bot) sendGameReplay(user *tgbotapi.User, data string, isURL bool) {
-	if isURL {
-		data, _ = url.QueryUnescape(data)
-	}
-
+func (bot *Bot) sendGameReplay(user *tgbotapi.User, data string) error {
 	data = strings.TrimPrefix(data, "replay")
+	gameID := data[1:]
+
+	bot.gameIDToMovesSequenceMutex.Lock()
+	movesSequence, ok := bot.gameIDToMovesSequence[gameID]
+	bot.gameIDToMovesSequenceMutex.Unlock()
+	if !ok {
+		return fmt.Errorf("Game is too old!")
+	}
 
 	var whiteStarted bool
 	if data[0] == 'w' {
@@ -237,24 +245,16 @@ func (bot *Bot) sendGameReplay(user *tgbotapi.User, data string, isURL bool) {
 		whiteStarted = false
 	}
 
-	var movesSequence []coord.Coord
-	err := json.Unmarshal([]byte(data[1:]), &movesSequence)
-	if err != nil {
-		log.Panicln(err)
-	}
-
-	gifFilename := uuid.NewString() + ".gif"
+	gifFilename := gameID + ".gif"
 	gifmaker.Make(gifFilename, movesSequence, whiteStarted)
+	bot.api.Send(tgbotapi.NewAnimation(user.ID, tgbotapi.FilePath(gifFilename)))
 
-	_, err = bot.api.Send(tgbotapi.NewAnimation(user.ID, tgbotapi.FilePath(gifFilename)))
+	err := os.Remove(gifFilename)
 	if err != nil {
 		log.Panicln(err)
 	}
 
-	// err = os.Remove(gifFilename)
-	// if err != nil {
-	// 	log.Panicln(err)
-	// }
+	return nil
 }
 
 func (bot *Bot) placeDisk(query *tgbotapi.CallbackQuery) {
@@ -308,6 +308,10 @@ func (bot *Bot) handleGameEnd(game *othellogame.Game, query *tgbotapi.CallbackQu
 		bot.scoreboard.UpdateRankOf(winner.ID, 1, 0)
 		bot.scoreboard.UpdateRankOf(loser.ID, 0, 1)
 	}
+
+	bot.gameIDToMovesSequenceMutex.Lock()
+	bot.gameIDToMovesSequence[game.ID()] = game.MovesSequence()
+	bot.gameIDToMovesSequenceMutex.Unlock()
 
 	msg, replyMarkup := getGameOverMsgAndReplyMarkup(
 		game,
@@ -510,6 +514,10 @@ func (bot *Bot) handleSurrender(query *tgbotapi.CallbackQuery) {
 		log.Panicf("Invalid state: usersToCurrentGames does not contain %v.\n", loser)
 	}
 
+	bot.gameIDToMovesSequenceMutex.Lock()
+	bot.gameIDToMovesSequence[game.ID()] = game.MovesSequence()
+	bot.gameIDToMovesSequenceMutex.Unlock()
+
 	winner := game.OpponentOf(loser)
 
 	msg, replyMarkup := getSurrenderMsgAndReplyMarkup(
@@ -557,6 +565,10 @@ func (bot *Bot) handleEndEarly(query *tgbotapi.CallbackQuery) {
 	bot.userToLastTimeActiveMutex.Unlock()
 
 	if secondsSinceLastActive := time.Since(lastActiveTime).Seconds(); secondsSinceLastActive > 90 {
+		bot.gameIDToMovesSequenceMutex.Lock()
+		bot.gameIDToMovesSequence[game.ID()] = game.MovesSequence()
+		bot.gameIDToMovesSequenceMutex.Unlock()
+
 		msg, replyMarkup := getEarlyEndMsgAndReplyMarkup(
 			game,
 			user2,
