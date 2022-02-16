@@ -41,7 +41,7 @@ func (doc *PlayerDoc) String(rank int) string {
 }
 
 func (doc *PlayerDoc) Score() int {
-	return doc.Wins * 3 - doc.Losses
+	return 3*doc.Wins - doc.Losses
 }
 
 type Handler struct {
