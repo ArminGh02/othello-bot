@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -200,6 +201,10 @@ func (bot *Bot) handleCallbackQuery(query *tgbotapi.CallbackQuery) {
 		return
 	}
 
+	if strings.HasPrefix(data, "profile") {
+		bot.alertProfile(query)
+	}
+
 	if match, _ := regexp.MatchString(`^\d+_\d+$`, data); match {
 		bot.placeDisk(query)
 		return
@@ -212,10 +217,6 @@ func (bot *Bot) handleCallbackQuery(query *tgbotapi.CallbackQuery) {
 		bot.playWithRandomOpponent(query)
 	case "toggleShowingLegalMoves":
 		bot.toggleShowingLegalMoves(query)
-	case "whiteProfile":
-		bot.alertProfile(true, query)
-	case "blackProfile":
-		bot.alertProfile(false, query)
 	case "surrender":
 		bot.handleSurrender(query)
 	case "end":
@@ -486,21 +487,9 @@ func (bot *Bot) toggleShowingLegalMoves(query *tgbotapi.CallbackQuery) {
 	bot.api.Request(tgbotapi.NewCallback(query.ID, "Toggled for you!"))
 }
 
-func (bot *Bot) alertProfile(white bool, query *tgbotapi.CallbackQuery) {
-	bot.userToCurrentGameMutex.Lock()
-	defer bot.userToCurrentGameMutex.Unlock()
-
-	game := bot.userToCurrentGame[*query.From]
-
-	var userID int64
-	if white {
-		userID = game.WhiteUser().ID
-	} else {
-		userID = game.BlackUser().ID
-	}
-
+func (bot *Bot) alertProfile(query *tgbotapi.CallbackQuery) {
+	userID, _ := strconv.ParseInt(strings.TrimPrefix(query.Data, "profile"), 10, 64)
 	rank := bot.scoreboard.RankOf(userID)
-
 	bot.api.Request(tgbotapi.NewCallbackWithAlert(query.ID, bot.db.Find(userID).String(rank)))
 }
 

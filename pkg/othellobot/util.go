@@ -3,6 +3,7 @@ package othellobot
 import (
 	"fmt"
 	"math"
+	"strconv"
 
 	"github.com/ArminGh02/othello-bot/pkg/consts"
 	"github.com/ArminGh02/othello-bot/pkg/othellogame"
@@ -125,8 +126,10 @@ func buildProfilesRow(game *othellogame.Game) []tgbotapi.InlineKeyboardButton {
 		game.BlackDisks(),
 	)
 	return tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData(whiteProfile, "whiteProfile"),
-		tgbotapi.NewInlineKeyboardButtonData(blackProfile, "blackProfile"),
+		tgbotapi.NewInlineKeyboardButtonData(
+			whiteProfile, "profile"+strconv.FormatInt(game.WhiteUser().ID, 10)),
+		tgbotapi.NewInlineKeyboardButtonData(
+			blackProfile, "profile"+strconv.FormatInt(game.BlackUser().ID, 10)),
 	)
 }
 
