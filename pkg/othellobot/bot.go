@@ -25,6 +25,7 @@ type Bot struct {
 	api                        *tgbotapi.BotAPI
 	db                         *database.Handler
 	scoreboard                 util.Scoreboard
+	waitingPlayer              chan *tgbotapi.User
 	inlineMessageIDToUser      map[string]*tgbotapi.User
 	gameIDToMovesSequence      map[string][]coord.Coord
 	gameToInlineMessageID      map[*othellogame.Game]string
@@ -39,7 +40,6 @@ type Bot struct {
 	userToLastTimeActiveMutex  sync.Mutex
 	userToMessageIDMutex       sync.Mutex
 	userToChatBuddyMutex       sync.Mutex
-	waitingPlayer              chan *tgbotapi.User
 }
 
 func New(token, mongodbURI string) *Bot {
@@ -48,6 +48,7 @@ func New(token, mongodbURI string) *Bot {
 		token:                 token,
 		db:                    db,
 		scoreboard:            util.NewScoreboard(db.GetAllPlayers()),
+		waitingPlayer:         make(chan *tgbotapi.User, 1),
 		inlineMessageIDToUser: make(map[string]*tgbotapi.User),
 		gameIDToMovesSequence: make(map[string][]coord.Coord),
 		gameToInlineMessageID: make(map[*othellogame.Game]string),
@@ -55,7 +56,6 @@ func New(token, mongodbURI string) *Bot {
 		userToLastTimeActive:  make(map[tgbotapi.User]time.Time),
 		userToMessageID:       make(map[tgbotapi.User]int),
 		userToChatBuddy:       make(map[tgbotapi.User]*tgbotapi.User),
-		waitingPlayer:         make(chan *tgbotapi.User, 1),
 	}
 }
 
