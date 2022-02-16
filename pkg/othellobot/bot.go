@@ -553,7 +553,8 @@ func (bot *Bot) handleEndEarly(query *tgbotapi.CallbackQuery) {
 	lastActiveTime := bot.userToLastTimeActive[*user2]
 	bot.userToLastTimeActiveMutex.Unlock()
 
-	if secondsSinceLastActive := time.Since(lastActiveTime).Seconds(); secondsSinceLastActive > 90 {
+	secondsSinceLastActive := time.Since(lastActiveTime).Seconds()
+	if secondsSinceLastActive > 90 {
 		bot.gameIDToMovesSequenceMutex.Lock()
 		bot.gameIDToMovesSequence[game.ID()] = game.MovesSequence()
 		bot.gameIDToMovesSequenceMutex.Unlock()
