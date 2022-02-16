@@ -25,12 +25,12 @@ type Bot struct {
 	api                          *tgbotapi.BotAPI
 	db                           *database.Handler
 	scoreboard                   util.Scoreboard
-	inlineMessageIDsToUsers      map[string]*tgbotapi.User
-	gamesToInlineMessageIDs      map[*othellogame.Game]string
-	usersToCurrentGames          map[tgbotapi.User]*othellogame.Game
-	usersToLastTimeActive        map[tgbotapi.User]time.Time
-	usersToMessageIDs            map[tgbotapi.User]int
-	usersToChatBuddy             map[tgbotapi.User]*tgbotapi.User
+	inlineMessageIDToUser        map[string]*tgbotapi.User
+	gameToInlineMessageID        map[*othellogame.Game]string
+	userToCurrentGame            map[tgbotapi.User]*othellogame.Game
+	userToLastTimeActive         map[tgbotapi.User]time.Time
+	userToMessageID              map[tgbotapi.User]int
+	userToChatBuddy              map[tgbotapi.User]*tgbotapi.User
 	inlineMessageIDsToUsersMutex sync.Mutex
 	gamesToInlineMessageIDsMutex sync.Mutex
 	usersToCurrentGamesMutex     sync.Mutex
@@ -46,12 +46,12 @@ func New(token, mongodbURI string) *Bot {
 		token:                   token,
 		db:                      db,
 		scoreboard:              util.NewScoreboard(db.GetAllPlayers()),
-		inlineMessageIDsToUsers: make(map[string]*tgbotapi.User),
-		gamesToInlineMessageIDs: make(map[*othellogame.Game]string),
-		usersToCurrentGames:     make(map[tgbotapi.User]*othellogame.Game),
-		usersToLastTimeActive:   make(map[tgbotapi.User]time.Time),
-		usersToMessageIDs:       make(map[tgbotapi.User]int),
-		usersToChatBuddy:        make(map[tgbotapi.User]*tgbotapi.User),
+		inlineMessageIDToUser: make(map[string]*tgbotapi.User),
+		gameToInlineMessageID: make(map[*othellogame.Game]string),
+		userToCurrentGame:     make(map[tgbotapi.User]*othellogame.Game),
+		userToLastTimeActive:   make(map[tgbotapi.User]time.Time),
+		userToMessageID:       make(map[tgbotapi.User]int),
+		userToChatBuddy:        make(map[tgbotapi.User]*tgbotapi.User),
 		waitingPlayer:           make(chan *tgbotapi.User, 1),
 	}
 }
@@ -97,7 +97,7 @@ func (bot *Bot) handleMessage(message *tgbotapi.Message) {
 
 	if strings.HasPrefix(message.Text, "End chat with") {
 		bot.usersToChatBuddyMutex.Lock()
-		delete(bot.usersToChatBuddy, *message.From)
+		delete(bot.userToChatBuddy, *message.From)
 		bot.usersToChatBuddyMutex.Unlock()
 
 		msg := tgbotapi.NewMessage(message.From.ID, "Chat ended.")
@@ -119,7 +119,7 @@ func (bot *Bot) handleMessage(message *tgbotapi.Message) {
 		user1 := message.From
 
 		bot.usersToChatBuddyMutex.Lock()
-		user2, ok := bot.usersToChatBuddy[*user1]
+		user2, ok := bot.userToChatBuddy[*user1]
 		if !ok {
 			break
 		}
@@ -260,7 +260,7 @@ func (bot *Bot) placeDisk(query *tgbotapi.CallbackQuery) {
 	bot.usersToCurrentGamesMutex.Lock()
 	defer bot.usersToCurrentGamesMutex.Unlock()
 
-	game, ok := bot.usersToCurrentGames[*user]
+	game, ok := bot.userToCurrentGame[*user]
 	if !ok {
 		log.Panicf("Invalid state: usersToCurrentGames does not contain %v.\n", user)
 	}
@@ -275,7 +275,7 @@ func (bot *Bot) placeDisk(query *tgbotapi.CallbackQuery) {
 		bot.handleGameEnd(game, query)
 	} else {
 		bot.usersToLastTimeActiveMutex.Lock()
-		bot.usersToLastTimeActive[*user] = time.Now()
+		bot.userToLastTimeActive[*user] = time.Now()
 		bot.usersToLastTimeActiveMutex.Unlock()
 
 		msg, replyMarkup := getRunningGameMsgAndReplyMarkup(
@@ -330,28 +330,28 @@ func (bot *Bot) cleanUp(game *othellogame.Game, query *tgbotapi.CallbackQuery) {
 	user1 := *game.WhiteUser()
 	user2 := *game.BlackUser()
 
-	delete(bot.usersToCurrentGames, user1)
-	delete(bot.usersToCurrentGames, user2)
+	delete(bot.userToCurrentGame, user1)
+	delete(bot.userToCurrentGame, user2)
 
 	if query.InlineMessageID != "" {
 		bot.inlineMessageIDsToUsersMutex.Lock()
-		delete(bot.inlineMessageIDsToUsers, query.InlineMessageID)
+		delete(bot.inlineMessageIDToUser, query.InlineMessageID)
 		bot.inlineMessageIDsToUsersMutex.Unlock()
 
 		bot.gamesToInlineMessageIDsMutex.Lock()
-		delete(bot.gamesToInlineMessageIDs, game)
+		delete(bot.gameToInlineMessageID, game)
 		bot.gamesToInlineMessageIDsMutex.Unlock()
 	} else {
 		bot.usersToMessageIDsMutex.Lock()
-		delete(bot.usersToMessageIDs, user1)
-		delete(bot.usersToMessageIDs, user2)
+		delete(bot.userToMessageID, user1)
+		delete(bot.userToMessageID, user2)
 		bot.usersToMessageIDsMutex.Unlock()
 	}
 }
 
 func (bot *Bot) startNewGameWithFriend(query *tgbotapi.CallbackQuery) {
 	bot.inlineMessageIDsToUsersMutex.Lock()
-	user1, ok := bot.inlineMessageIDsToUsers[query.InlineMessageID]
+	user1, ok := bot.inlineMessageIDToUser[query.InlineMessageID]
 	if !ok {
 		log.Panicf(
 			"Invalid state: inlineMessageIDsToUsers does not contain %v.\n",
@@ -371,20 +371,20 @@ func (bot *Bot) startNewGameWithFriend(query *tgbotapi.CallbackQuery) {
 	log.Printf("Started %v.\n", game)
 
 	bot.gamesToInlineMessageIDsMutex.Lock()
-	bot.gamesToInlineMessageIDs[game] = query.InlineMessageID
+	bot.gameToInlineMessageID[game] = query.InlineMessageID
 	bot.gamesToInlineMessageIDsMutex.Unlock()
 
 	now := time.Now()
 	bot.usersToLastTimeActiveMutex.Lock()
-	bot.usersToLastTimeActive[*user1] = now
-	bot.usersToLastTimeActive[*user2] = now
+	bot.userToLastTimeActive[*user1] = now
+	bot.userToLastTimeActive[*user2] = now
 	bot.usersToLastTimeActiveMutex.Unlock()
 
 	bot.usersToCurrentGamesMutex.Lock()
 	defer bot.usersToCurrentGamesMutex.Unlock()
 
-	bot.usersToCurrentGames[*user1] = game
-	bot.usersToCurrentGames[*user2] = game
+	bot.userToCurrentGame[*user1] = game
+	bot.userToCurrentGame[*user2] = game
 
 	msg, replyMarkup := getRunningGameMsgAndReplyMarkup(
 		game,
@@ -417,15 +417,15 @@ func (bot *Bot) playWithRandomOpponent(query *tgbotapi.CallbackQuery) {
 
 	now := time.Now()
 	bot.usersToLastTimeActiveMutex.Lock()
-	bot.usersToLastTimeActive[*user1] = now
-	bot.usersToLastTimeActive[*user2] = now
+	bot.userToLastTimeActive[*user1] = now
+	bot.userToLastTimeActive[*user2] = now
 	bot.usersToLastTimeActiveMutex.Unlock()
 
 	bot.usersToCurrentGamesMutex.Lock()
 	defer bot.usersToCurrentGamesMutex.Unlock()
 
-	bot.usersToCurrentGames[*user1] = game
-	bot.usersToCurrentGames[*user2] = game
+	bot.userToCurrentGame[*user1] = game
+	bot.userToCurrentGame[*user2] = game
 
 	msgText, replyMarkup := getRunningGameMsgAndReplyMarkup(
 		game,
@@ -439,12 +439,12 @@ func (bot *Bot) playWithRandomOpponent(query *tgbotapi.CallbackQuery) {
 
 	msg, _ := bot.api.Send(msg1)
 	bot.usersToMessageIDsMutex.Lock()
-	bot.usersToMessageIDs[*user1] = msg.MessageID
+	bot.userToMessageID[*user1] = msg.MessageID
 	bot.usersToMessageIDsMutex.Unlock()
 
 	msg, _ = bot.api.Send(msg2)
 	bot.usersToMessageIDsMutex.Lock()
-	bot.usersToMessageIDs[*user2] = msg.MessageID
+	bot.userToMessageID[*user2] = msg.MessageID
 	bot.usersToMessageIDsMutex.Unlock()
 }
 
@@ -454,7 +454,7 @@ func (bot *Bot) toggleShowingLegalMoves(query *tgbotapi.CallbackQuery) {
 	bot.usersToCurrentGamesMutex.Lock()
 	defer bot.usersToCurrentGamesMutex.Unlock()
 
-	game, ok := bot.usersToCurrentGames[*user]
+	game, ok := bot.userToCurrentGame[*user]
 	if !ok {
 		log.Panicf("Invalid state: usersToCurrentGames does not contain %v.\n", user)
 	}
@@ -483,7 +483,7 @@ func (bot *Bot) alertProfile(white bool, query *tgbotapi.CallbackQuery) {
 	bot.usersToCurrentGamesMutex.Lock()
 	defer bot.usersToCurrentGamesMutex.Unlock()
 
-	game := bot.usersToCurrentGames[*query.From]
+	game := bot.userToCurrentGame[*query.From]
 
 	var userID int64
 	if white {
@@ -502,7 +502,7 @@ func (bot *Bot) handleSurrender(query *tgbotapi.CallbackQuery) {
 
 	bot.usersToCurrentGamesMutex.Lock()
 
-	game, ok := bot.usersToCurrentGames[*loser]
+	game, ok := bot.userToCurrentGame[*loser]
 	if !ok {
 		log.Panicf("Invalid state: usersToCurrentGames does not contain %v.\n", loser)
 	}
@@ -538,7 +538,7 @@ func (bot *Bot) handleEndEarly(query *tgbotapi.CallbackQuery) {
 
 	user1 := query.From
 
-	game := bot.usersToCurrentGames[*user1]
+	game := bot.userToCurrentGame[*user1]
 
 	if game.IsTurnOf(user1) {
 		bot.api.Request(
@@ -550,7 +550,7 @@ func (bot *Bot) handleEndEarly(query *tgbotapi.CallbackQuery) {
 	user2 := game.OpponentOf(user1)
 
 	bot.usersToLastTimeActiveMutex.Lock()
-	lastActiveTime := bot.usersToLastTimeActive[*user2]
+	lastActiveTime := bot.userToLastTimeActive[*user2]
 	bot.usersToLastTimeActiveMutex.Unlock()
 
 	if secondsSinceLastActive := time.Since(lastActiveTime).Seconds(); secondsSinceLastActive > 90 {
@@ -594,7 +594,7 @@ func (bot *Bot) startChatBetweenOpponents(query *tgbotapi.CallbackQuery) {
 	bot.api.Send(msg)
 
 	bot.usersToChatBuddyMutex.Lock()
-	bot.usersToChatBuddy[*user1] = user2
+	bot.userToChatBuddy[*user1] = user2
 	bot.usersToChatBuddyMutex.Unlock()
 }
 
@@ -633,7 +633,7 @@ func (bot *Bot) resendGame(inlineQuery *tgbotapi.InlineQuery) {
 	bot.usersToCurrentGamesMutex.Lock()
 	defer bot.usersToCurrentGamesMutex.Unlock()
 
-	game, ok := bot.usersToCurrentGames[*user]
+	game, ok := bot.userToCurrentGame[*user]
 	if !ok {
 		log.Panicf("Invalid state: usersToCurrentGames does not contain %v.\n", user)
 	}
@@ -663,24 +663,24 @@ func (bot *Bot) handleChosenInlineResult(chosenInlineResult *tgbotapi.ChosenInli
 
 	if chosenInlineResult.Query != resendQuery {
 		bot.inlineMessageIDsToUsersMutex.Lock()
-		bot.inlineMessageIDsToUsers[newID] = user
+		bot.inlineMessageIDToUser[newID] = user
 		bot.inlineMessageIDsToUsersMutex.Unlock()
 		return
 	}
 
 	bot.usersToCurrentGamesMutex.Lock()
 
-	game, ok := bot.usersToCurrentGames[*user]
+	game, ok := bot.userToCurrentGame[*user]
 	if !ok {
 		log.Panicf("Invalid state: usersToCurrentGames does not contain %v.\n", user)
 	}
 
 	bot.gamesToInlineMessageIDsMutex.Lock()
-	oldID, ok := bot.gamesToInlineMessageIDs[game]
+	oldID, ok := bot.gameToInlineMessageID[game]
 	if !ok {
 		log.Panicf("Invalid state: gamesToInlineMessageIDs does not contain %v.\n", game)
 	}
-	bot.gamesToInlineMessageIDs[game] = newID
+	bot.gameToInlineMessageID[game] = newID
 	bot.gamesToInlineMessageIDsMutex.Unlock()
 
 	bot.api.Send(tgbotapi.EditMessageTextConfig{
@@ -693,8 +693,8 @@ func (bot *Bot) handleChosenInlineResult(chosenInlineResult *tgbotapi.ChosenInli
 	bot.usersToCurrentGamesMutex.Unlock()
 
 	bot.inlineMessageIDsToUsersMutex.Lock()
-	bot.inlineMessageIDsToUsers[newID] = user
-	delete(bot.inlineMessageIDsToUsers, oldID)
+	bot.inlineMessageIDToUser[newID] = user
+	delete(bot.inlineMessageIDToUser, oldID)
 	bot.inlineMessageIDsToUsersMutex.Unlock()
 }
 
@@ -717,8 +717,8 @@ func (bot *Bot) sendEditMessageTextForGame(
 	}
 
 	bot.usersToMessageIDsMutex.Lock()
-	messageID1 := bot.usersToMessageIDs[*user1]
-	messageID2 := bot.usersToMessageIDs[*user2]
+	messageID1 := bot.userToMessageID[*user1]
+	messageID2 := bot.userToMessageID[*user2]
 	bot.usersToMessageIDsMutex.Unlock()
 
 	msg1 := tgbotapi.NewEditMessageTextAndMarkup(user1.ID, messageID1, msgText, *replyMarkup)
@@ -732,7 +732,7 @@ func (bot *Bot) opponentOf(user *tgbotapi.User) *tgbotapi.User {
 	bot.usersToCurrentGamesMutex.Lock()
 	defer bot.usersToCurrentGamesMutex.Unlock()
 
-	game, ok := bot.usersToCurrentGames[*user]
+	game, ok := bot.userToCurrentGame[*user]
 	if !ok {
 		log.Panicf("Invalid state: usersToCurrentGames does not contain %v.\n", user)
 	}
