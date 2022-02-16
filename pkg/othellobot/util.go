@@ -1,11 +1,8 @@
 package othellobot
 
 import (
-	"encoding/json"
 	"fmt"
-	"log"
 	"math"
-	"net/url"
 
 	"github.com/ArminGh02/othello-bot/pkg/consts"
 	"github.com/ArminGh02/othello-bot/pkg/othellogame"
@@ -136,20 +133,6 @@ func buildGameOverKeyboard(
 	botUsername string,
 	inline bool,
 ) *tgbotapi.InlineKeyboardMarkup {
-	button2data := "replay"
-
-	if game.WhiteStarted() {
-		button2data += "w"
-	} else {
-		button2data += "b"
-	}
-
-	b, err := json.Marshal(game.MovesSequence())
-	if err != nil {
-		log.Panicln(err)
-	}
-	button2data += string(b)
-
 	var button1, button2 tgbotapi.InlineKeyboardButton
 	if inline {
 		inlineQuery := ""
@@ -158,18 +141,13 @@ func buildGameOverKeyboard(
 			SwitchInlineQueryCurrentChat: &inlineQuery,
 		}
 
-		url := fmt.Sprintf(
-			"https://telegram.me/%s?start=%s",
-			botUsername,
-			url.QueryEscape(button2data),
-		)
-		button2 = tgbotapi.InlineKeyboardButton{
-			Text: "🎞 Game replay",
-			URL:  &url,
-		}
+		url := fmt.Sprintf("https://telegram.me/%s?start=replay%s", botUsername, game.ID())
+		button2 = tgbotapi.NewInlineKeyboardButtonURL("🎞 Game replay", url)
 	} else {
 		button1 = tgbotapi.NewInlineKeyboardButtonData("🔄 Rematch", "rematch")
-		button2 = tgbotapi.NewInlineKeyboardButtonData("🎞 Game replay", button2data)
+
+		data := "replay" + game.ID()
+		button2 = tgbotapi.NewInlineKeyboardButtonData("🎞 Game replay", data)
 	}
 	row := tgbotapi.NewInlineKeyboardRow(button1, button2)
 	return &tgbotapi.InlineKeyboardMarkup{
