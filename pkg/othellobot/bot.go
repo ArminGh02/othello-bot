@@ -21,38 +21,41 @@ import (
 )
 
 type Bot struct {
-	token                        string
-	api                          *tgbotapi.BotAPI
-	db                           *database.Handler
-	scoreboard                   util.Scoreboard
-	inlineMessageIDToUser        map[string]*tgbotapi.User
-	gameToInlineMessageID        map[*othellogame.Game]string
-	userToCurrentGame            map[tgbotapi.User]*othellogame.Game
-	userToLastTimeActive         map[tgbotapi.User]time.Time
-	userToMessageID              map[tgbotapi.User]int
-	userToChatBuddy              map[tgbotapi.User]*tgbotapi.User
-	inlineMessageIDsToUsersMutex sync.Mutex
-	gamesToInlineMessageIDsMutex sync.Mutex
-	usersToCurrentGamesMutex     sync.Mutex
-	usersToLastTimeActiveMutex   sync.Mutex
-	usersToMessageIDsMutex       sync.Mutex
-	usersToChatBuddyMutex        sync.Mutex
-	waitingPlayer                chan *tgbotapi.User
+	token                      string
+	api                        *tgbotapi.BotAPI
+	db                         *database.Handler
+	scoreboard                 util.Scoreboard
+	inlineMessageIDToUser      map[string]*tgbotapi.User
+	gameIDToMovesSequence      map[string][]coord.Coord
+	gameToInlineMessageID      map[*othellogame.Game]string
+	userToCurrentGame          map[tgbotapi.User]*othellogame.Game
+	userToLastTimeActive       map[tgbotapi.User]time.Time
+	userToMessageID            map[tgbotapi.User]int
+	userToChatBuddy            map[tgbotapi.User]*tgbotapi.User
+	inlineMessageIDToUserMutex sync.Mutex
+	gameIDToMovesSequenceMutex sync.Mutex
+	gameToInlineMessageIDMutex sync.Mutex
+	userToCurrentGameMutex     sync.Mutex
+	userToLastTimeActiveMutex  sync.Mutex
+	userToMessageIDMutex       sync.Mutex
+	userToChatBuddyMutex       sync.Mutex
+	waitingPlayer              chan *tgbotapi.User
 }
 
 func New(token, mongodbURI string) *Bot {
 	db := database.New(mongodbURI)
 	return &Bot{
-		token:                   token,
-		db:                      db,
-		scoreboard:              util.NewScoreboard(db.GetAllPlayers()),
+		token:                 token,
+		db:                    db,
+		scoreboard:            util.NewScoreboard(db.GetAllPlayers()),
 		inlineMessageIDToUser: make(map[string]*tgbotapi.User),
+		gameIDToMovesSequence: make(map[string][]coord.Coord),
 		gameToInlineMessageID: make(map[*othellogame.Game]string),
 		userToCurrentGame:     make(map[tgbotapi.User]*othellogame.Game),
-		userToLastTimeActive:   make(map[tgbotapi.User]time.Time),
+		userToLastTimeActive:  make(map[tgbotapi.User]time.Time),
 		userToMessageID:       make(map[tgbotapi.User]int),
-		userToChatBuddy:        make(map[tgbotapi.User]*tgbotapi.User),
-		waitingPlayer:           make(chan *tgbotapi.User, 1),
+		userToChatBuddy:       make(map[tgbotapi.User]*tgbotapi.User),
+		waitingPlayer:         make(chan *tgbotapi.User, 1),
 	}
 }
 
@@ -96,9 +99,9 @@ func (bot *Bot) handleMessage(message *tgbotapi.Message) {
 	}
 
 	if strings.HasPrefix(message.Text, "End chat with") {
-		bot.usersToChatBuddyMutex.Lock()
+		bot.userToChatBuddyMutex.Lock()
 		delete(bot.userToChatBuddy, *message.From)
-		bot.usersToChatBuddyMutex.Unlock()
+		bot.userToChatBuddyMutex.Unlock()
 
 		msg := tgbotapi.NewMessage(message.From.ID, "Chat ended.")
 		msg.ReplyMarkup = buildMainKeyboard()
@@ -118,12 +121,12 @@ func (bot *Bot) handleMessage(message *tgbotapi.Message) {
 	default:
 		user1 := message.From
 
-		bot.usersToChatBuddyMutex.Lock()
+		bot.userToChatBuddyMutex.Lock()
 		user2, ok := bot.userToChatBuddy[*user1]
 		if !ok {
 			break
 		}
-		bot.usersToChatBuddyMutex.Unlock()
+		bot.userToChatBuddyMutex.Unlock()
 
 		msg := fmt.Sprintf(
 			"📬 Message from %s:\n\n%s",
@@ -257,8 +260,8 @@ func (bot *Bot) sendGameReplay(user *tgbotapi.User, data string, isURL bool) {
 func (bot *Bot) placeDisk(query *tgbotapi.CallbackQuery) {
 	user := query.From
 
-	bot.usersToCurrentGamesMutex.Lock()
-	defer bot.usersToCurrentGamesMutex.Unlock()
+	bot.userToCurrentGameMutex.Lock()
+	defer bot.userToCurrentGameMutex.Unlock()
 
 	game, ok := bot.userToCurrentGame[*user]
 	if !ok {
@@ -274,9 +277,9 @@ func (bot *Bot) placeDisk(query *tgbotapi.CallbackQuery) {
 	} else if game.IsEnded() {
 		bot.handleGameEnd(game, query)
 	} else {
-		bot.usersToLastTimeActiveMutex.Lock()
+		bot.userToLastTimeActiveMutex.Lock()
 		bot.userToLastTimeActive[*user] = time.Now()
-		bot.usersToLastTimeActiveMutex.Unlock()
+		bot.userToLastTimeActiveMutex.Unlock()
 
 		msg, replyMarkup := getRunningGameMsgAndReplyMarkup(
 			game,
@@ -334,23 +337,23 @@ func (bot *Bot) cleanUp(game *othellogame.Game, query *tgbotapi.CallbackQuery) {
 	delete(bot.userToCurrentGame, user2)
 
 	if query.InlineMessageID != "" {
-		bot.inlineMessageIDsToUsersMutex.Lock()
+		bot.inlineMessageIDToUserMutex.Lock()
 		delete(bot.inlineMessageIDToUser, query.InlineMessageID)
-		bot.inlineMessageIDsToUsersMutex.Unlock()
+		bot.inlineMessageIDToUserMutex.Unlock()
 
-		bot.gamesToInlineMessageIDsMutex.Lock()
+		bot.gameToInlineMessageIDMutex.Lock()
 		delete(bot.gameToInlineMessageID, game)
-		bot.gamesToInlineMessageIDsMutex.Unlock()
+		bot.gameToInlineMessageIDMutex.Unlock()
 	} else {
-		bot.usersToMessageIDsMutex.Lock()
+		bot.userToMessageIDMutex.Lock()
 		delete(bot.userToMessageID, user1)
 		delete(bot.userToMessageID, user2)
-		bot.usersToMessageIDsMutex.Unlock()
+		bot.userToMessageIDMutex.Unlock()
 	}
 }
 
 func (bot *Bot) startNewGameWithFriend(query *tgbotapi.CallbackQuery) {
-	bot.inlineMessageIDsToUsersMutex.Lock()
+	bot.inlineMessageIDToUserMutex.Lock()
 	user1, ok := bot.inlineMessageIDToUser[query.InlineMessageID]
 	if !ok {
 		log.Panicf(
@@ -358,7 +361,7 @@ func (bot *Bot) startNewGameWithFriend(query *tgbotapi.CallbackQuery) {
 			query.InlineMessageID,
 		)
 	}
-	bot.inlineMessageIDsToUsersMutex.Unlock()
+	bot.inlineMessageIDToUserMutex.Unlock()
 
 	user2 := query.From
 
@@ -370,18 +373,18 @@ func (bot *Bot) startNewGameWithFriend(query *tgbotapi.CallbackQuery) {
 
 	log.Printf("Started %v.\n", game)
 
-	bot.gamesToInlineMessageIDsMutex.Lock()
+	bot.gameToInlineMessageIDMutex.Lock()
 	bot.gameToInlineMessageID[game] = query.InlineMessageID
-	bot.gamesToInlineMessageIDsMutex.Unlock()
+	bot.gameToInlineMessageIDMutex.Unlock()
 
 	now := time.Now()
-	bot.usersToLastTimeActiveMutex.Lock()
+	bot.userToLastTimeActiveMutex.Lock()
 	bot.userToLastTimeActive[*user1] = now
 	bot.userToLastTimeActive[*user2] = now
-	bot.usersToLastTimeActiveMutex.Unlock()
+	bot.userToLastTimeActiveMutex.Unlock()
 
-	bot.usersToCurrentGamesMutex.Lock()
-	defer bot.usersToCurrentGamesMutex.Unlock()
+	bot.userToCurrentGameMutex.Lock()
+	defer bot.userToCurrentGameMutex.Unlock()
 
 	bot.userToCurrentGame[*user1] = game
 	bot.userToCurrentGame[*user2] = game
@@ -416,13 +419,13 @@ func (bot *Bot) playWithRandomOpponent(query *tgbotapi.CallbackQuery) {
 	log.Printf("Started %s.\n", game)
 
 	now := time.Now()
-	bot.usersToLastTimeActiveMutex.Lock()
+	bot.userToLastTimeActiveMutex.Lock()
 	bot.userToLastTimeActive[*user1] = now
 	bot.userToLastTimeActive[*user2] = now
-	bot.usersToLastTimeActiveMutex.Unlock()
+	bot.userToLastTimeActiveMutex.Unlock()
 
-	bot.usersToCurrentGamesMutex.Lock()
-	defer bot.usersToCurrentGamesMutex.Unlock()
+	bot.userToCurrentGameMutex.Lock()
+	defer bot.userToCurrentGameMutex.Unlock()
 
 	bot.userToCurrentGame[*user1] = game
 	bot.userToCurrentGame[*user2] = game
@@ -438,21 +441,21 @@ func (bot *Bot) playWithRandomOpponent(query *tgbotapi.CallbackQuery) {
 	msg2.ReplyMarkup = replyMarkup
 
 	msg, _ := bot.api.Send(msg1)
-	bot.usersToMessageIDsMutex.Lock()
+	bot.userToMessageIDMutex.Lock()
 	bot.userToMessageID[*user1] = msg.MessageID
-	bot.usersToMessageIDsMutex.Unlock()
+	bot.userToMessageIDMutex.Unlock()
 
 	msg, _ = bot.api.Send(msg2)
-	bot.usersToMessageIDsMutex.Lock()
+	bot.userToMessageIDMutex.Lock()
 	bot.userToMessageID[*user2] = msg.MessageID
-	bot.usersToMessageIDsMutex.Unlock()
+	bot.userToMessageIDMutex.Unlock()
 }
 
 func (bot *Bot) toggleShowingLegalMoves(query *tgbotapi.CallbackQuery) {
 	user := query.From
 
-	bot.usersToCurrentGamesMutex.Lock()
-	defer bot.usersToCurrentGamesMutex.Unlock()
+	bot.userToCurrentGameMutex.Lock()
+	defer bot.userToCurrentGameMutex.Unlock()
 
 	game, ok := bot.userToCurrentGame[*user]
 	if !ok {
@@ -480,8 +483,8 @@ func (bot *Bot) toggleShowingLegalMoves(query *tgbotapi.CallbackQuery) {
 }
 
 func (bot *Bot) alertProfile(white bool, query *tgbotapi.CallbackQuery) {
-	bot.usersToCurrentGamesMutex.Lock()
-	defer bot.usersToCurrentGamesMutex.Unlock()
+	bot.userToCurrentGameMutex.Lock()
+	defer bot.userToCurrentGameMutex.Unlock()
 
 	game := bot.userToCurrentGame[*query.From]
 
@@ -500,7 +503,7 @@ func (bot *Bot) alertProfile(white bool, query *tgbotapi.CallbackQuery) {
 func (bot *Bot) handleSurrender(query *tgbotapi.CallbackQuery) {
 	loser := query.From
 
-	bot.usersToCurrentGamesMutex.Lock()
+	bot.userToCurrentGameMutex.Lock()
 
 	game, ok := bot.userToCurrentGame[*loser]
 	if !ok {
@@ -522,7 +525,7 @@ func (bot *Bot) handleSurrender(query *tgbotapi.CallbackQuery) {
 
 	bot.cleanUp(game, query)
 
-	bot.usersToCurrentGamesMutex.Unlock()
+	bot.userToCurrentGameMutex.Unlock()
 
 	bot.db.IncrementWins(winner.ID)
 	bot.db.IncrementLosses(loser.ID)
@@ -533,8 +536,8 @@ func (bot *Bot) handleSurrender(query *tgbotapi.CallbackQuery) {
 }
 
 func (bot *Bot) handleEndEarly(query *tgbotapi.CallbackQuery) {
-	bot.usersToCurrentGamesMutex.Lock()
-	defer bot.usersToCurrentGamesMutex.Unlock()
+	bot.userToCurrentGameMutex.Lock()
+	defer bot.userToCurrentGameMutex.Unlock()
 
 	user1 := query.From
 
@@ -549,9 +552,9 @@ func (bot *Bot) handleEndEarly(query *tgbotapi.CallbackQuery) {
 
 	user2 := game.OpponentOf(user1)
 
-	bot.usersToLastTimeActiveMutex.Lock()
+	bot.userToLastTimeActiveMutex.Lock()
 	lastActiveTime := bot.userToLastTimeActive[*user2]
-	bot.usersToLastTimeActiveMutex.Unlock()
+	bot.userToLastTimeActiveMutex.Unlock()
 
 	if secondsSinceLastActive := time.Since(lastActiveTime).Seconds(); secondsSinceLastActive > 90 {
 		msg, replyMarkup := getEarlyEndMsgAndReplyMarkup(
@@ -593,9 +596,9 @@ func (bot *Bot) startChatBetweenOpponents(query *tgbotapi.CallbackQuery) {
 	)
 	bot.api.Send(msg)
 
-	bot.usersToChatBuddyMutex.Lock()
+	bot.userToChatBuddyMutex.Lock()
 	bot.userToChatBuddy[*user1] = user2
-	bot.usersToChatBuddyMutex.Unlock()
+	bot.userToChatBuddyMutex.Unlock()
 }
 
 func (bot *Bot) handleInlineQuery(inlineQuery *tgbotapi.InlineQuery) {
@@ -630,8 +633,8 @@ func (bot *Bot) handleInlineQuery(inlineQuery *tgbotapi.InlineQuery) {
 func (bot *Bot) resendGame(inlineQuery *tgbotapi.InlineQuery) {
 	user := inlineQuery.From
 
-	bot.usersToCurrentGamesMutex.Lock()
-	defer bot.usersToCurrentGamesMutex.Unlock()
+	bot.userToCurrentGameMutex.Lock()
+	defer bot.userToCurrentGameMutex.Unlock()
 
 	game, ok := bot.userToCurrentGame[*user]
 	if !ok {
@@ -662,26 +665,26 @@ func (bot *Bot) handleChosenInlineResult(chosenInlineResult *tgbotapi.ChosenInli
 	newID := chosenInlineResult.InlineMessageID
 
 	if chosenInlineResult.Query != resendQuery {
-		bot.inlineMessageIDsToUsersMutex.Lock()
+		bot.inlineMessageIDToUserMutex.Lock()
 		bot.inlineMessageIDToUser[newID] = user
-		bot.inlineMessageIDsToUsersMutex.Unlock()
+		bot.inlineMessageIDToUserMutex.Unlock()
 		return
 	}
 
-	bot.usersToCurrentGamesMutex.Lock()
+	bot.userToCurrentGameMutex.Lock()
 
 	game, ok := bot.userToCurrentGame[*user]
 	if !ok {
 		log.Panicf("Invalid state: usersToCurrentGames does not contain %v.\n", user)
 	}
 
-	bot.gamesToInlineMessageIDsMutex.Lock()
+	bot.gameToInlineMessageIDMutex.Lock()
 	oldID, ok := bot.gameToInlineMessageID[game]
 	if !ok {
 		log.Panicf("Invalid state: gamesToInlineMessageIDs does not contain %v.\n", game)
 	}
 	bot.gameToInlineMessageID[game] = newID
-	bot.gamesToInlineMessageIDsMutex.Unlock()
+	bot.gameToInlineMessageIDMutex.Unlock()
 
 	bot.api.Send(tgbotapi.EditMessageTextConfig{
 		BaseEdit: tgbotapi.BaseEdit{
@@ -690,12 +693,12 @@ func (bot *Bot) handleChosenInlineResult(chosenInlineResult *tgbotapi.ChosenInli
 		Text: fmt.Sprintf("%v has been moved down 🔽", game),
 	})
 
-	bot.usersToCurrentGamesMutex.Unlock()
+	bot.userToCurrentGameMutex.Unlock()
 
-	bot.inlineMessageIDsToUsersMutex.Lock()
+	bot.inlineMessageIDToUserMutex.Lock()
 	bot.inlineMessageIDToUser[newID] = user
 	delete(bot.inlineMessageIDToUser, oldID)
-	bot.inlineMessageIDsToUsersMutex.Unlock()
+	bot.inlineMessageIDToUserMutex.Unlock()
 }
 
 func (bot *Bot) sendEditMessageTextForGame(
@@ -716,10 +719,10 @@ func (bot *Bot) sendEditMessageTextForGame(
 		return
 	}
 
-	bot.usersToMessageIDsMutex.Lock()
+	bot.userToMessageIDMutex.Lock()
 	messageID1 := bot.userToMessageID[*user1]
 	messageID2 := bot.userToMessageID[*user2]
-	bot.usersToMessageIDsMutex.Unlock()
+	bot.userToMessageIDMutex.Unlock()
 
 	msg1 := tgbotapi.NewEditMessageTextAndMarkup(user1.ID, messageID1, msgText, *replyMarkup)
 	msg2 := tgbotapi.NewEditMessageTextAndMarkup(user2.ID, messageID2, msgText, *replyMarkup)
@@ -729,8 +732,8 @@ func (bot *Bot) sendEditMessageTextForGame(
 }
 
 func (bot *Bot) opponentOf(user *tgbotapi.User) *tgbotapi.User {
-	bot.usersToCurrentGamesMutex.Lock()
-	defer bot.usersToCurrentGamesMutex.Unlock()
+	bot.userToCurrentGameMutex.Lock()
+	defer bot.userToCurrentGameMutex.Unlock()
 
 	game, ok := bot.userToCurrentGame[*user]
 	if !ok {
