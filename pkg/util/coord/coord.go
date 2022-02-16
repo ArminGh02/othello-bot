@@ -1,8 +1,8 @@
 package coord
 
 type Coord struct {
-	X int `json:"x"`
-	Y int `json:"y"`
+	X int
+	Y int
 }
 
 func New(x, y int) Coord {
