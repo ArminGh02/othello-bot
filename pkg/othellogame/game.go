@@ -11,7 +11,7 @@ import (
 	"github.com/ArminGh02/othello-bot/pkg/util"
 	"github.com/ArminGh02/othello-bot/pkg/util/coord"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/google/uuid"
+	"github.com/rs/xid"
 )
 
 var offset = [direction.Count]coord.Coord{
@@ -39,7 +39,7 @@ type Game struct {
 
 func New(user1, user2 *tgbotapi.User) *Game {
 	g := &Game{
-		id:              uuid.NewString(),
+		id:              xid.New().String(),
 		users:           [2]tgbotapi.User{*user1, *user2},
 		disksCount:      [2]int{2, 2},
 		turn:            turn.Random(),
