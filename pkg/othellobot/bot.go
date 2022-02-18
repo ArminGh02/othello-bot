@@ -245,12 +245,7 @@ func (bot *Bot) sendGameReplay(user *tgbotapi.User, data string) error {
 		return fmt.Errorf("Game is too old!")
 	}
 
-	var whiteStarted bool
-	if data[0] == 'w' {
-		whiteStarted = true
-	} else {
-		whiteStarted = false
-	}
+	whiteStarted := data[0] == 'w'
 
 	gifFilename := gameID + ".gif"
 	gifmaker.Make(gifFilename, movesSequence, whiteStarted)
