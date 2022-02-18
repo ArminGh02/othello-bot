@@ -191,7 +191,7 @@ func (g *Game) MovesSequence() []coord.Coord {
 }
 
 func (g *Game) SetTurn(white bool) {
-	g.turn = turn.Turn(white)
+	g.turn = turn.Turn(!white)
 	if len(g.movesSequence) == 0 {
 		g.whiteStarted = white
 	}
