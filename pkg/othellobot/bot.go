@@ -613,8 +613,8 @@ func (bot *Bot) handleEndEarly(query *tgbotapi.CallbackQuery) {
 
 		bot.api.Request(tgbotapi.CallbackConfig{CallbackQueryID: query.ID})
 	} else {
-		msg := fmt.Sprintf(
-			"You can end the game if your opponent doesn't place a disk for %d seconds.",
+		msg := fmt.Sprintf("You can end the game if your "+
+			"opponent doesn't place a disk for %d seconds.",
 			90-int(secondsSinceLastActive),
 		)
 		bot.api.Request(tgbotapi.NewCallback(query.ID, msg))
