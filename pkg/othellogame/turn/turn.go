@@ -10,8 +10,8 @@ import (
 type Turn bool
 
 const (
-	WHITE = Turn(false)
-	BLACK = Turn(true)
+	White = Turn(false)
+	Black = Turn(true)
 )
 
 func Random() Turn {
@@ -19,14 +19,14 @@ func Random() Turn {
 }
 
 func (t Turn) Int() int {
-	if t == BLACK {
+	if t == Black {
 		return color.Black
 	}
 	return color.White
 }
 
 func (t Turn) Cell() cell.Cell {
-	if t == BLACK {
+	if t == Black {
 		return cell.Black
 	}
 	return cell.White

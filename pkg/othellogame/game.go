@@ -47,7 +47,7 @@ func New(user1, user2 *tgbotapi.User) *Game {
 		movesSequence:   make([]coord.Coord, 0, boardSize*boardSize-4),
 	}
 
-	g.whiteStarted = g.turn == turn.WHITE
+	g.whiteStarted = g.turn == turn.White
 
 	mid := len(g.board)/2 - 1
 	g.board[mid][mid] = cell.White
