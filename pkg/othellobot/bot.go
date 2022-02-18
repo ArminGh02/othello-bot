@@ -32,6 +32,8 @@ type Bot struct {
 	userToLastTimeActive       map[tgbotapi.User]time.Time
 	userToMessageID            map[tgbotapi.User]int
 	userToChatBuddy            map[tgbotapi.User]*tgbotapi.User
+	userIDToUser               map[int64]*tgbotapi.User
+	userIDToRematchGameID      map[int64]string
 	inlineMessageIDToUserMutex sync.Mutex
 	gameIDToMovesSequenceMutex sync.Mutex
 	gameToInlineMessageIDMutex sync.Mutex
@@ -39,6 +41,8 @@ type Bot struct {
 	userToLastTimeActiveMutex  sync.Mutex
 	userToMessageIDMutex       sync.Mutex
 	userToChatBuddyMutex       sync.Mutex
+	userIDToUserMutex          sync.Mutex
+	userIDToRematchGameIDMutex sync.Mutex
 }
 
 func New(token, mongodbURI string) *Bot {
@@ -55,6 +59,8 @@ func New(token, mongodbURI string) *Bot {
 		userToLastTimeActive:  make(map[tgbotapi.User]time.Time),
 		userToMessageID:       make(map[tgbotapi.User]int),
 		userToChatBuddy:       make(map[tgbotapi.User]*tgbotapi.User),
+		userIDToUser:          make(map[int64]*tgbotapi.User),
+		userIDToRematchGameID: make(map[int64]string),
 	}
 }
 
@@ -190,29 +196,9 @@ func (bot *Bot) showHelp(message *tgbotapi.Message) {
 }
 
 func (bot *Bot) handleCallbackQuery(query *tgbotapi.CallbackQuery) {
-	data := query.Data
-
-	if strings.HasPrefix(data, "replay") {
-		text := ""
-		if err := bot.sendGameReplay(query.From, query.Data); err != nil {
-			text = err.Error()
-		}
-		bot.api.Request(tgbotapi.NewCallback(query.ID, text))
-		return
-	}
-
-	if strings.HasPrefix(data, "profile") {
-		bot.alertProfile(query)
-	}
-
-	if match, _ := regexp.MatchString(`^\d+_\d+$`, data); match {
-		bot.placeDisk(query)
-		return
-	}
-
-	switch data {
+	switch data := query.Data; data {
 	case "join":
-		bot.startNewGameWithFriend(query)
+		bot.startGameOfFriends(query)
 	case "playWithRandomOpponent":
 		bot.playWithRandomOpponent(query)
 	case "toggleShowingLegalMoves":
@@ -221,10 +207,30 @@ func (bot *Bot) handleCallbackQuery(query *tgbotapi.CallbackQuery) {
 		bot.handleSurrender(query)
 	case "end":
 		bot.handleEndEarly(query)
-	case "gameOver":
-		bot.api.Request(tgbotapi.NewCallback(query.ID, "Game is over!"))
 	case "chat":
 		bot.startChatBetweenOpponents(query)
+	case "gameOver":
+		bot.api.Request(tgbotapi.NewCallback(query.ID, "Game is over!"))
+	default:
+		match, _ := regexp.MatchString(`^\d+_\d+$`, data)
+		switch {
+		case match:
+			bot.placeDisk(query)
+		case strings.HasPrefix(data, "replay"):
+			text := ""
+			if err := bot.sendGameReplay(query.From, query.Data); err != nil {
+				text = err.Error()
+			}
+			bot.api.Request(tgbotapi.NewCallback(query.ID, text))
+		case strings.HasPrefix(data, "profile"):
+			bot.alertProfile(query)
+		case strings.HasPrefix(data, "rematch"):
+			bot.handleRematch(query)
+		case strings.HasPrefix(data, "accept"):
+			bot.handleAcceptedRematch(query)
+		case strings.HasPrefix(data, "reject"):
+			bot.handleRejectedRematch(query)
+		}
 	}
 }
 
@@ -266,7 +272,8 @@ func (bot *Bot) placeDisk(query *tgbotapi.CallbackQuery) {
 
 	game, ok := bot.userToCurrentGame[*user]
 	if !ok {
-		log.Panicf("Invalid state: usersToCurrentGames does not contain %v.\n", user)
+		bot.api.Request(tgbotapi.NewCallbackWithAlert(query.ID, "Game is too old!"))
+		return
 	}
 
 	var where coord.Coord
@@ -357,18 +364,27 @@ func (bot *Bot) cleanUp(game *othellogame.Game, query *tgbotapi.CallbackQuery) {
 	}
 }
 
-func (bot *Bot) startNewGameWithFriend(query *tgbotapi.CallbackQuery) {
+func (bot *Bot) startGameOfFriends(query *tgbotapi.CallbackQuery) {
 	bot.inlineMessageIDToUserMutex.Lock()
 	user1, ok := bot.inlineMessageIDToUser[query.InlineMessageID]
 	if !ok {
-		log.Panicf(
-			"Invalid state: inlineMessageIDsToUsers does not contain %v.\n",
-			query.InlineMessageID,
-		)
+		bot.api.Request(tgbotapi.NewCallbackWithAlert(query.ID, "Invitation is too old!"))
+		return
 	}
 	bot.inlineMessageIDToUserMutex.Unlock()
 
 	user2 := query.From
+
+	if _, ok := bot.userToCurrentGame[*user1]; ok {
+		text := util.FirstNameElseLastName(user1) + " is playing another game"
+		bot.api.Request(tgbotapi.NewCallbackWithAlert(query.ID, text))
+		return
+	}
+	if _, ok := bot.userToCurrentGame[*user2]; ok {
+		text := util.FirstNameElseLastName(user2) + " is playing another game"
+		bot.api.Request(tgbotapi.NewCallbackWithAlert(query.ID, text))
+		return
+	}
 
 	if bot.db.AddPlayer(user2.ID, util.FullNameOf(user2)) {
 		bot.scoreboard.Insert(bot.db.Find(user2.ID))
@@ -387,6 +403,11 @@ func (bot *Bot) startNewGameWithFriend(query *tgbotapi.CallbackQuery) {
 	bot.userToLastTimeActive[*user1] = now
 	bot.userToLastTimeActive[*user2] = now
 	bot.userToLastTimeActiveMutex.Unlock()
+
+	bot.userIDToUserMutex.Lock()
+	bot.userIDToUser[user1.ID] = user1
+	bot.userIDToUser[user2.ID] = user2
+	bot.userIDToUserMutex.Unlock()
 
 	bot.userToCurrentGameMutex.Lock()
 	defer bot.userToCurrentGameMutex.Unlock()
@@ -407,17 +428,28 @@ func (bot *Bot) startNewGameWithFriend(query *tgbotapi.CallbackQuery) {
 }
 
 func (bot *Bot) playWithRandomOpponent(query *tgbotapi.CallbackQuery) {
-	defer bot.api.Request(tgbotapi.CallbackConfig{
-		CallbackQueryID: query.ID,
-	})
-
 	if len(bot.waitingPlayer) == 0 {
 		bot.waitingPlayer <- query.From
+		bot.api.Request(tgbotapi.CallbackConfig{
+			CallbackQueryID: query.ID,
+		})
 		return
 	}
 
-	user1 := <-bot.waitingPlayer
-	user2 := query.From
+	text := ""
+	if err := bot.startGameOfRandomOpponents(<-bot.waitingPlayer, query.From); err != nil {
+		text = err.Error()
+	}
+	bot.api.Request(tgbotapi.NewCallbackWithAlert(query.ID, text))
+}
+
+func (bot *Bot) startGameOfRandomOpponents(user1, user2 *tgbotapi.User) error {
+	if _, ok := bot.userToCurrentGame[*user1]; ok {
+		return fmt.Errorf("%s is playing another game", util.FirstNameElseLastName(user1))
+	}
+	if _, ok := bot.userToCurrentGame[*user2]; ok {
+		return fmt.Errorf("%s is playing another game", util.FirstNameElseLastName(user2))
+	}
 
 	game := othellogame.New(user1, user2)
 
@@ -429,6 +461,11 @@ func (bot *Bot) playWithRandomOpponent(query *tgbotapi.CallbackQuery) {
 	bot.userToLastTimeActive[*user2] = now
 	bot.userToLastTimeActiveMutex.Unlock()
 
+	bot.userIDToUserMutex.Lock()
+	bot.userIDToUser[user1.ID] = user1
+	bot.userIDToUser[user2.ID] = user2
+	bot.userIDToUserMutex.Unlock()
+
 	bot.userToCurrentGameMutex.Lock()
 	defer bot.userToCurrentGameMutex.Unlock()
 
@@ -436,10 +473,7 @@ func (bot *Bot) playWithRandomOpponent(query *tgbotapi.CallbackQuery) {
 	bot.userToCurrentGame[*user2] = game
 
 	msgText, replyMarkup := getRunningGameMsgAndReplyMarkup(
-		game,
-		bot.db.LegalMovesAreShown(game.ActiveUser().ID),
-		false,
-	)
+		game, bot.db.LegalMovesAreShown(game.ActiveUser().ID), false)
 	msg1 := tgbotapi.NewMessage(user1.ID, msgText)
 	msg2 := tgbotapi.NewMessage(user2.ID, msgText)
 	msg1.ReplyMarkup = replyMarkup
@@ -454,6 +488,8 @@ func (bot *Bot) playWithRandomOpponent(query *tgbotapi.CallbackQuery) {
 	bot.userToMessageIDMutex.Lock()
 	bot.userToMessageID[*user2] = msg.MessageID
 	bot.userToMessageIDMutex.Unlock()
+
+	return nil
 }
 
 func (bot *Bot) toggleShowingLegalMoves(query *tgbotapi.CallbackQuery) {
@@ -464,7 +500,8 @@ func (bot *Bot) toggleShowingLegalMoves(query *tgbotapi.CallbackQuery) {
 
 	game, ok := bot.userToCurrentGame[*user]
 	if !ok {
-		log.Panicf("Invalid state: usersToCurrentGames does not contain %v.\n", user)
+		bot.api.Request(tgbotapi.NewCallbackWithAlert(query.ID, "Game is too old!"))
+		return
 	}
 
 	bot.db.ToggleLegalMovesAreShown(user.ID)
@@ -500,7 +537,8 @@ func (bot *Bot) handleSurrender(query *tgbotapi.CallbackQuery) {
 
 	game, ok := bot.userToCurrentGame[*loser]
 	if !ok {
-		log.Panicf("Invalid state: usersToCurrentGames does not contain %v.\n", loser)
+		bot.api.Request(tgbotapi.NewCallbackWithAlert(query.ID, "Game is too old!"))
+		return
 	}
 
 	bot.gameIDToMovesSequenceMutex.Lock()
@@ -585,7 +623,11 @@ func (bot *Bot) handleEndEarly(query *tgbotapi.CallbackQuery) {
 
 func (bot *Bot) startChatBetweenOpponents(query *tgbotapi.CallbackQuery) {
 	user1 := query.From
-	user2 := bot.opponentOf(user1)
+	user2, err := bot.opponentOf(user1)
+	if err != nil {
+		bot.api.Request(tgbotapi.NewCallbackWithAlert(query.ID, err.Error()))
+		return
+	}
 
 	msg := tgbotapi.NewMessage(user1.ID, "Chat with your opponent:")
 	buttonText := fmt.Sprint("End chat with ", util.FirstNameElseLastName(user2))
@@ -599,6 +641,114 @@ func (bot *Bot) startChatBetweenOpponents(query *tgbotapi.CallbackQuery) {
 	bot.userToChatBuddyMutex.Lock()
 	bot.userToChatBuddy[*user1] = user2
 	bot.userToChatBuddyMutex.Unlock()
+}
+
+func (bot *Bot) handleRematch(query *tgbotapi.CallbackQuery) {
+	var user1ID, user2ID int64
+	var gameID string
+	fmt.Sscanf(query.Data, "rematch%d&%d:%s", &user1ID, &user2ID, &gameID)
+
+	var otherUserID int64
+	if query.From.ID == user1ID {
+		otherUserID = user2ID
+	} else {
+		otherUserID = user1ID
+	}
+
+	bot.userIDToUserMutex.Lock()
+	otherUser, ok := bot.userIDToUser[otherUserID]
+	bot.userIDToUserMutex.Unlock()
+
+	if !ok {
+		bot.api.Request(tgbotapi.NewCallbackWithAlert(query.ID, "Game is too old!"))
+		return
+	}
+
+	bot.userIDToRematchGameIDMutex.Lock()
+	otherUserGameID := bot.userIDToRematchGameID[otherUserID]
+	bot.userIDToRematchGameIDMutex.Unlock()
+	if otherUserGameID == gameID { // other user has also requested rematch; start the game
+		bot.userIDToRematchGameIDMutex.Lock()
+		delete(bot.userIDToRematchGameID, user1ID)
+		delete(bot.userIDToRematchGameID, user2ID)
+		bot.userIDToRematchGameIDMutex.Unlock()
+
+		text := ""
+		if err := bot.startGameOfRandomOpponents(query.From, otherUser); err != nil {
+			text = err.Error()
+		}
+		bot.api.Request(tgbotapi.NewCallbackWithAlert(query.ID, text))
+	} else {
+		bot.userIDToRematchGameIDMutex.Lock()
+		bot.userIDToRematchGameID[query.From.ID] = gameID
+		bot.userIDToRematchGameIDMutex.Unlock()
+
+		msgText := fmt.Sprintf(
+			"%s wants to rematch", util.FirstNameElseLastName(query.From))
+		msg := tgbotapi.NewMessage(otherUserID, msgText)
+		id := strconv.FormatInt(query.From.ID, 10)
+		msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("Accept", "accept"+id),
+				tgbotapi.NewInlineKeyboardButtonData("Reject", "reject"+id),
+			),
+		)
+
+		text := "Wait for your opponent's response."
+		bot.api.Request(tgbotapi.NewCallback(query.ID, text))
+	}
+}
+
+func (bot *Bot) handleAcceptedRematch(query *tgbotapi.CallbackQuery) {
+	otherUserID, _ := strconv.ParseInt(strings.TrimPrefix(query.Data, "reject"), 10, 64)
+
+	bot.userIDToRematchGameIDMutex.Lock()
+	delete(bot.userIDToRematchGameID, otherUserID)
+	bot.userIDToRematchGameIDMutex.Unlock()
+
+	bot.userIDToUserMutex.Lock()
+	otherUser, ok := bot.userIDToUser[otherUserID]
+	bot.userIDToUserMutex.Unlock()
+	if !ok {
+		bot.api.Request(tgbotapi.NewCallbackWithAlert(query.ID, "Game is too old!"))
+		return
+	}
+
+	bot.userIDToRematchGameIDMutex.Lock()
+	delete(bot.userIDToRematchGameID, otherUserID)
+	bot.userIDToRematchGameIDMutex.Unlock()
+
+	bot.startGameOfRandomOpponents(query.From, otherUser)
+
+	bot.api.Request(tgbotapi.CallbackConfig{CallbackQueryID: query.ID})
+}
+
+func (bot *Bot) handleRejectedRematch(query *tgbotapi.CallbackQuery) {
+	otherUserID, _ := strconv.ParseInt(strings.TrimPrefix(query.Data, "reject"), 10, 64)
+
+	bot.userIDToRematchGameIDMutex.Lock()
+	delete(bot.userIDToRematchGameID, otherUserID)
+	bot.userIDToRematchGameIDMutex.Unlock()
+
+	bot.userIDToUserMutex.Lock()
+	otherUser, ok := bot.userIDToUser[otherUserID]
+	bot.userIDToUserMutex.Unlock()
+
+	if ok {
+		msg := "Rematch request was rejected by " + util.FirstNameElseLastName(otherUser)
+		bot.api.Send(tgbotapi.NewMessage(otherUserID, msg))
+	}
+
+	bot.api.Send(
+		tgbotapi.NewEditMessageTextAndMarkup(
+			query.From.ID,
+			query.Message.MessageID,
+			"Rematch was rejected.",
+			tgbotapi.NewInlineKeyboardMarkup(),
+		),
+	)
+
+	bot.api.Request(tgbotapi.CallbackConfig{CallbackQueryID: query.ID})
 }
 
 func (bot *Bot) handleInlineQuery(inlineQuery *tgbotapi.InlineQuery) {
@@ -638,7 +788,14 @@ func (bot *Bot) resendGame(inlineQuery *tgbotapi.InlineQuery) {
 
 	game, ok := bot.userToCurrentGame[*user]
 	if !ok {
-		log.Panicf("Invalid state: usersToCurrentGames does not contain %v.\n", user)
+		bot.api.Request(tgbotapi.InlineConfig{
+			InlineQueryID:     inlineQuery.ID,
+			Results:           []interface{}{},
+			CacheTime:         0,
+			SwitchPMText:      "Game is too old!",
+			SwitchPMParameter: "oldGame",
+		})
+		return
 	}
 
 	msgText, replyMarkup := getRunningGameMsgAndReplyMarkup(
@@ -731,13 +888,13 @@ func (bot *Bot) sendEditMessageTextForGame(
 	bot.api.Send(msg2)
 }
 
-func (bot *Bot) opponentOf(user *tgbotapi.User) *tgbotapi.User {
+func (bot *Bot) opponentOf(user *tgbotapi.User) (*tgbotapi.User, error) {
 	bot.userToCurrentGameMutex.Lock()
 	defer bot.userToCurrentGameMutex.Unlock()
 
 	game, ok := bot.userToCurrentGame[*user]
 	if !ok {
-		log.Panicf("Invalid state: usersToCurrentGames does not contain %v.\n", user)
+		return nil, fmt.Errorf("Game is too old!")
 	}
-	return game.OpponentOf(user)
+	return game.OpponentOf(user), nil
 }

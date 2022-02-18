@@ -157,7 +157,9 @@ func buildGameOverKeyboard(
 		url := fmt.Sprintf("https://telegram.me/%s?start=%s", botUsername, button2data)
 		button2 = tgbotapi.NewInlineKeyboardButtonURL("🎞 Game replay", url)
 	} else {
-		button1 = tgbotapi.NewInlineKeyboardButtonData("🔄 Rematch", "rematch")
+		rematchData := fmt.Sprint(
+			"rematch", game.WhiteUser().ID, "&", game.BlackUser().ID, ":", game.ID())
+		button1 = tgbotapi.NewInlineKeyboardButtonData("🔄 Rematch", rematchData)
 		button2 = tgbotapi.NewInlineKeyboardButtonData("🎞 Game replay", button2data)
 	}
 	row := tgbotapi.NewInlineKeyboardRow(button1, button2)
