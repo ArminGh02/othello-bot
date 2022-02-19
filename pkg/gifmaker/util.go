@@ -9,7 +9,7 @@ import (
 	"os"
 )
 
-func readImage(filename string) image.Image {
+func readPNG(filename string) image.Image {
 	f, err := os.Open(filename)
 	if err != nil {
 		log.Panicln(err)
