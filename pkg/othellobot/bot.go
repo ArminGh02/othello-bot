@@ -225,7 +225,7 @@ func (bot *Bot) handleCallbackQuery(query *tgbotapi.CallbackQuery) {
 			if err := bot.sendGameReplay(query.From, query.Data); err != nil {
 				text = err.Error()
 			}
-			bot.api.Request(tgbotapi.NewCallback(query.ID, text))
+			bot.api.Request(tgbotapi.NewCallbackWithAlert(query.ID, text))
 		case strings.HasPrefix(data, "profile"):
 			bot.alertProfile(query)
 		case strings.HasPrefix(data, "rematch"):
