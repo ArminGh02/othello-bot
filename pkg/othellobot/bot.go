@@ -145,33 +145,37 @@ func (bot *Bot) handleMessage(message *tgbotapi.Message) {
 func (bot *Bot) handleCommand(message *tgbotapi.Message) {
 	switch command := message.Command(); command {
 	case "start":
-		user := message.From
-
-		if arg := message.CommandArguments(); strings.HasPrefix(arg, "replay") {
-			if err := bot.sendGameReplay(user, arg); err != nil {
-				bot.api.Send(tgbotapi.NewMessage(user.ID, err.Error()))
-			}
-			break
-		}
-
-		msgText := fmt.Sprintf("Hi %s\\!\n"+
-			"I am *Othello Bot*\\.\n"+
-			"Have fun playing Othello strategic board game,\n"+
-			"with your friends or opponents around the world\\!", user.FirstName)
-		msg := tgbotapi.NewMessage(message.Chat.ID, msgText)
-		msg.ReplyMarkup = buildMainKeyboard()
-		msg.ParseMode = "MarkdownV2"
-		bot.api.Send(msg)
-
-		if bot.db.AddPlayer(user.ID, util.FullNameOf(user)) {
-			bot.scoreboard.Insert(bot.db.Find(user.ID))
-		}
-
-		log.Printf("Bot started by %v.", user)
+		bot.handleStartCommand(message)
 	default:
 		msgText := fmt.Sprintf("Sorry! %s is not recognized as a command.", command)
 		bot.api.Send(tgbotapi.NewMessage(message.Chat.ID, msgText))
 	}
+}
+
+func (bot *Bot) handleStartCommand(message *tgbotapi.Message) {
+	user := message.From
+
+	if arg := message.CommandArguments(); strings.HasPrefix(arg, "replay") {
+		if err := bot.sendGameReplay(user, arg); err != nil {
+			bot.api.Send(tgbotapi.NewMessage(user.ID, err.Error()))
+		}
+		return
+	}
+
+	msgText := fmt.Sprintf("Hi %s\\!\n"+
+		"I am *Othello Bot*\\.\n"+
+		"Have fun playing Othello strategic board game,\n"+
+		"with your friends or opponents around the world\\!", user.FirstName)
+	msg := tgbotapi.NewMessage(message.Chat.ID, msgText)
+	msg.ReplyMarkup = buildMainKeyboard()
+	msg.ParseMode = "MarkdownV2"
+	bot.api.Send(msg)
+
+	if bot.db.AddPlayer(user.ID, util.FullNameOf(user)) {
+		bot.scoreboard.Insert(bot.db.Find(user.ID))
+	}
+
+	log.Printf("Bot started by %v.", user)
 }
 
 func (bot *Bot) askGameMode(message *tgbotapi.Message) {
