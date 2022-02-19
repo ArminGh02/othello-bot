@@ -19,7 +19,12 @@ type PlayerDoc struct {
 	LegalMovesAreShown bool   `bson:"legal_moves_are_shown"`
 }
 
-func newPlayerDoc(userID int64, name string, wins, losses, draws int, legalMovesAreShown bool) *PlayerDoc {
+func newPlayerDoc(
+	userID int64,
+	name string,
+	wins, losses, draws int,
+	legalMovesAreShown bool,
+) *PlayerDoc {
 	return &PlayerDoc{
 		UserID:             userID,
 		Name:               name,
