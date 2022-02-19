@@ -245,14 +245,19 @@ func (g *Game) flipDisks(where coord.Coord) {
 	opponent := g.turn.Cell().Reversed()
 	directionsToFlip := g.findDirectionsToFlip(where, false)
 	for _, dir := range directionsToFlip {
-		for c := coord.Plus(where, offset[dir]); g.board[c.Y][c.X] == opponent; c.Plus(offset[dir]) {
+		c := coord.Plus(where, offset[dir])
+		for g.board[c.Y][c.X] == opponent {
 			g.board[c.Y][c.X] = g.turn.Cell()
+			c.Plus(offset[dir])
 		}
 	}
 	g.updateDisksCount()
 }
 
-func (g *Game) findDirectionsToFlip(where coord.Coord, mustBeEmptyCell bool) []direction.Direction {
+func (g *Game) findDirectionsToFlip(
+	where coord.Coord,
+	mustBeEmptyCell bool,
+) []direction.Direction {
 	opponent := g.turn.Cell().Reversed()
 	res := make([]direction.Direction, 0, direction.Count)
 
@@ -260,12 +265,12 @@ func (g *Game) findDirectionsToFlip(where coord.Coord, mustBeEmptyCell bool) []d
 		return res
 	}
 
-	for i := direction.NorthWest; i < direction.Count; i++ {
-		c := coord.Plus(where, offset[i])
+	for dir := direction.NorthWest; dir < direction.Count; dir++ {
+		c := coord.Plus(where, offset[dir])
 		if isValidCoord(c, len(g.board)) && g.board[c.Y][c.X] == opponent {
 		loop:
 			for {
-				c.Plus(offset[i])
+				c.Plus(offset[dir])
 
 				if !isValidCoord(c, len(g.board)) {
 					break
@@ -273,7 +278,7 @@ func (g *Game) findDirectionsToFlip(where coord.Coord, mustBeEmptyCell bool) []d
 
 				switch g.board[c.Y][c.X] {
 				case g.turn.Cell():
-					res = append(res, i)
+					res = append(res, dir)
 					break loop
 				case cell.Empty:
 					break loop
