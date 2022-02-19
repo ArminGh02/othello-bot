@@ -37,7 +37,7 @@ func newPlayerDoc(
 
 func (doc *PlayerDoc) String(rank int) string {
 	return fmt.Sprintf(
-		"%s's Profile:\nRank: %d\nWins: %d\nLosses: %d\nDraws: %dWin Percentage: %.2f",
+		"%s's Profile:\nRank: %d\nWins: %d\nLosses: %d\nDraws: %d\nWin Percentage: %.2f",
 		doc.Name,
 		rank,
 		doc.Wins,
