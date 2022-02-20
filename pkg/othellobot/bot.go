@@ -179,6 +179,19 @@ func (bot *Bot) handleStartCommand(message *tgbotapi.Message) {
 }
 
 func (bot *Bot) askGameMode(message *tgbotapi.Message) {
+	bot.userIDToCurrentGameMutex.Lock()
+	_, ok := bot.userIDToCurrentGame[message.From.ID]
+	bot.userIDToCurrentGameMutex.Unlock()
+	if ok {
+		bot.api.Send(
+			tgbotapi.NewMessage(
+				message.Chat.ID,
+				"You can't play more than one games at the same time.",
+			),
+		)
+		return
+	}
+
 	msgText := "You can play Othello with opponents around the world,\n" +
 		"or play with your friends in chats!"
 	msg := tgbotapi.NewMessage(message.Chat.ID, msgText)
@@ -820,7 +833,7 @@ func (bot *Bot) handleChosenInlineResult(chosenInlineResult *tgbotapi.ChosenInli
 	user := chosenInlineResult.From
 	newID := chosenInlineResult.InlineMessageID
 
-	if chosenInlineResult.Query != resendQuery {
+	ikf chosenInlineResult.Query != resendQuery {
 		bot.inlineMessageIDToUserMutex.Lock()
 		bot.inlineMessageIDToUser[newID] = user
 		bot.inlineMessageIDToUserMutex.Unlock()
