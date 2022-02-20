@@ -771,6 +771,20 @@ func (bot *Bot) handleInlineQuery(inlineQuery *tgbotapi.InlineQuery) {
 
 	user := inlineQuery.From
 
+	bot.userIDToCurrentGameMutex.Lock()
+	_, ok := bot.userIDToCurrentGame[user.ID]
+	bot.userIDToCurrentGameMutex.Unlock()
+	if ok {
+		bot.api.Request(tgbotapi.InlineConfig{
+			InlineQueryID:     inlineQuery.ID,
+			Results:           []interface{}{},
+			CacheTime:         0,
+			SwitchPMText:      "Can't play two games at the same time!",
+			SwitchPMParameter: "playingSimultaneously",
+		})
+		return
+	}
+
 	if bot.db.AddPlayer(user.ID, util.FullNameOf(user)) {
 		bot.scoreboard.Insert(bot.db.Find(user.ID))
 	}
