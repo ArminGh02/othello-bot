@@ -18,6 +18,7 @@ import (
 	"github.com/ArminGh02/othello-bot/pkg/util/coord"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/google/uuid"
+	cron "github.com/robfig/cron/v3"
 )
 
 type Bot struct {
@@ -82,6 +83,13 @@ func (bot *Bot) Run() {
 	defer bot.db.Disconnect()
 
 	log.Println("Bot started.")
+
+	c := cron.New()
+	c.AddFunc("@daily", func() {
+		atomic.SwapUint64(&bot.gamesPlayedToday, 0)
+		atomic.SwapUint64(&bot.usersJoinedToday, 0)
+	})
+	c.Start()
 
 	for update := range updates {
 		go bot.handleUpdate(update)
