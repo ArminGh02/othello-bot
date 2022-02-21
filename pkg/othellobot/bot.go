@@ -574,7 +574,7 @@ func (bot *Bot) handleCanceledGame(query *tgbotapi.CallbackQuery) {
 				query.From.ID,
 				query.Message.MessageID,
 				"Request was canceled.",
-				tgbotapi.NewInlineKeyboardMarkup(),
+				util.RemoveInlineKeyboardMarkup(),
 			),
 		)
 	} else {

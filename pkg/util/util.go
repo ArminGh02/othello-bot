@@ -13,6 +13,12 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
+func RemoveInlineKeyboardMarkup() tgbotapi.InlineKeyboardMarkup {
+	return tgbotapi.InlineKeyboardMarkup{
+		InlineKeyboard: make([][]tgbotapi.InlineKeyboardButton, 0),
+	}
+}
+
 func UsernameElseName(user *tgbotapi.User) string {
 	username := user.UserName
 	if username != "" {
