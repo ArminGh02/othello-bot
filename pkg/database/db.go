@@ -100,6 +100,14 @@ func (db *Handler) GetAllPlayers() []PlayerDoc {
 	return res
 }
 
+func (db *Handler) UsersCount() int64 {
+	count, err := db.coll.CountDocuments(context.TODO(), bson.D{})
+	if err != nil {
+		log.Panicln(err)
+	}
+	return count
+}
+
 func (db *Handler) LegalMovesAreShown(userID int64) bool {
 	return db.Find(userID).LegalMovesAreShown
 }
