@@ -158,6 +158,15 @@ func (bot *Bot) handleCommand(message *tgbotapi.Message) {
 	switch command := message.Command(); command {
 	case "start":
 		bot.handleStartCommand(message)
+	case "stats":
+		msgText := fmt.Sprintf("⚪️ Games played today: %d\n"+
+			"⚫️ Users joined today: %d\n"+
+			"🔴 All players: %d",
+			atomic.LoadUint64(&bot.gamesPlayedToday),
+			atomic.LoadUint64(&bot.usersJoinedToday),
+			bot.db.UsersCount(),
+		)
+		bot.api.Send(tgbotapi.NewMessage(message.Chat.ID, msgText))
 	default:
 		msgText := fmt.Sprintf("Sorry! %s is not recognized as a command.", command)
 		bot.api.Send(tgbotapi.NewMessage(message.Chat.ID, msgText))
