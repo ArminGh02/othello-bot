@@ -240,6 +240,8 @@ func (bot *Bot) handleCallbackQuery(query *tgbotapi.CallbackQuery) {
 		bot.startGameOfFriends(query)
 	case "playWithRandomOpponent":
 		bot.playWithRandomOpponent(query)
+	case "cancel":
+		bot.handleCanceledGame(query)
 	case "toggleShowingLegalMoves":
 		bot.toggleShowingLegalMoves(query)
 	case "surrender":
@@ -463,8 +465,19 @@ func (bot *Bot) startGameOfFriends(query *tgbotapi.CallbackQuery) {
 }
 
 func (bot *Bot) playWithRandomOpponent(query *tgbotapi.CallbackQuery) {
+	user := query.From
+
 	if len(bot.waitingPlayer) == 0 {
-		bot.waitingPlayer <- query.From
+		bot.waitingPlayer <- user
+
+		msg := tgbotapi.NewMessage(user.ID, "Wait until another player joins the game.")
+		msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("Cancel", "cancel"),
+			),
+		)
+		bot.api.Send(msg)
+
 		bot.api.Request(tgbotapi.CallbackConfig{
 			CallbackQueryID: query.ID,
 		})
@@ -472,7 +485,7 @@ func (bot *Bot) playWithRandomOpponent(query *tgbotapi.CallbackQuery) {
 	}
 
 	text := ""
-	if err := bot.startGameOfRandomOpponents(<-bot.waitingPlayer, query.From); err != nil {
+	if err := bot.startGameOfRandomOpponents(<-bot.waitingPlayer, user); err != nil {
 		text = err.Error()
 	}
 	bot.api.Request(tgbotapi.NewCallbackWithAlert(query.ID, text))
@@ -525,6 +538,28 @@ func (bot *Bot) startGameOfRandomOpponents(user1, user2 *tgbotapi.User) error {
 	bot.userIDToMessageIDMutex.Unlock()
 
 	return nil
+}
+
+func (bot *Bot) handleCanceledGame(query *tgbotapi.CallbackQuery) {
+	defer bot.api.Request(tgbotapi.CallbackConfig{CallbackQueryID: query.ID})
+
+	if len(bot.waitingPlayer) == 0 {
+		return
+	}
+
+	waitingPlayer := <-bot.waitingPlayer
+	if *waitingPlayer == *query.From {
+		bot.api.Send(
+			tgbotapi.NewEditMessageTextAndMarkup(
+				query.From.ID,
+				query.Message.MessageID,
+				"Request was canceled.",
+				tgbotapi.NewInlineKeyboardMarkup(),
+			),
+		)
+	} else {
+		bot.waitingPlayer <- waitingPlayer
+	}
 }
 
 func (bot *Bot) toggleShowingLegalMoves(query *tgbotapi.CallbackQuery) {
@@ -647,9 +682,16 @@ func (bot *Bot) handleEndEarly(query *tgbotapi.CallbackQuery) {
 			query.InlineMessageID,
 		)
 
-		bot.api.Request(tgbotapi.CallbackConfig{CallbackQueryID: query.ID})
+		bot.cleanUp(game, query)
 
+		bot.db.IncrementWins(user1.ID)
+		bot.db.IncrementLosses(user2.ID)
+		bot.scoreboard.UpdateRankOf(user1.ID, 1, 0)
+		bot.scoreboard.UpdateRankOf(user2.ID, 0, 1)
+
+		bot.api.Request(tgbotapi.CallbackConfig{CallbackQueryID: query.ID})
 		atomic.AddUint64(&bot.gamesPlayedToday, 1)
+		log.Printf("%s ended %v.\n", user1, game)
 	} else {
 		msg := fmt.Sprintf("You can end the game if your "+
 			"opponent doesn't place a disk for %d seconds.",

@@ -2,6 +2,7 @@ package cell
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/ArminGh02/othello-bot/pkg/consts"
 )
@@ -23,7 +24,8 @@ func (c Cell) Emoji() string {
 	case White:
 		return consts.WhiteDiskEmoji
 	default:
-		panic(fmt.Sprintf("Invalid receiver for Cell.Emoji: %v", c))
+		log.Panicln(fmt.Sprintf("Invalid receiver for Cell.Emoji: %v", c))
+		panic("")
 	}
 }
 
@@ -34,6 +36,7 @@ func (c Cell) Reversed() Cell {
 	case White:
 		return Black
 	default:
-		panic(fmt.Sprintf("Invalid receiver for Cell.Emoji: %v", c))
+		log.Panicln(fmt.Sprintf("Invalid receiver for Cell.Emoji: %v", c))
+		panic("")
 	}
 }

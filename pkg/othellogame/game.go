@@ -2,6 +2,7 @@ package othellogame
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/ArminGh02/othello-bot/pkg/consts"
 	"github.com/ArminGh02/othello-bot/pkg/othellogame/cell"
@@ -133,13 +134,14 @@ func (g *Game) OpponentOf(user *tgbotapi.User) *tgbotapi.User {
 	if *user == *g.BlackUser() {
 		return g.WhiteUser()
 	}
-	panic("Invalid state: OpponentOf called with an argument unequal to both game users.")
+	log.Panicln("Invalid state: OpponentOf called with an argument unequal to both game users.")
+	panic("")
 }
 
 func (g *Game) WinnerColor() string {
 	winner := g.Winner()
 	if winner == nil {
-		panic("Invalid state: WinnerColor called when the game is a draw.")
+		log.Panicln("Invalid state: WinnerColor called when the game is a draw.")
 	}
 	if *winner == g.users[color.White] {
 		return cell.White.Emoji()

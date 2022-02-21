@@ -2,6 +2,7 @@ package util
 
 import (
 	"fmt"
+	"log"
 	"math"
 	"sort"
 	"strings"
@@ -142,8 +143,9 @@ func (s *Scoreboard) indexOf(userID int64) int {
 			return i
 		}
 	}
-	panic("An attempt was made to retrieve the index of a" +
+	log.Panicln("An attempt was made to retrieve the index of a" +
 		" user that was not inserted into scoreboard.")
+	panic("")
 }
 
 func (s *Scoreboard) RankOf(userID int64) int {
@@ -161,8 +163,9 @@ func (s *Scoreboard) RankOf(userID int64) int {
 			return rank
 		}
 	}
-	panic("An attempt was made to retrieve the rank of" +
+	log.Panicln("An attempt was made to retrieve the rank of" +
 		" a user that was not inserted into scoreboard.")
+	panic("")
 }
 
 func (s *Scoreboard) String() string {
