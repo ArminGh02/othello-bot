@@ -222,7 +222,12 @@ func (bot *Bot) askGameMode(message *tgbotapi.Message) {
 }
 
 func (bot *Bot) showScoreboard(message *tgbotapi.Message) {
-	bot.api.Send(tgbotapi.NewMessage(message.Chat.ID, bot.scoreboard.String()))
+	bot.api.Send(
+		tgbotapi.NewMessage(
+			message.Chat.ID,
+			bot.scoreboard.String(message.From.ID),
+		),
+	)
 }
 
 func (bot *Bot) showProfile(message *tgbotapi.Message) {

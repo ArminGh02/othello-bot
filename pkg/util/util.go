@@ -168,37 +168,58 @@ func (s *Scoreboard) RankOf(userID int64) int {
 	panic("")
 }
 
-func (s *Scoreboard) String() string {
+func (s *Scoreboard) String(userID int64) string {
 	var sb strings.Builder
 	rank := 0
 	lastScore := math.MinInt
+	emojis := map[int]string{1: "🥇", 2: "🥈", 3: "🥉"}
+loop:
 	for i := range s.scoreboard {
 		if score := s.scoreboard[i].Score(); score != lastScore {
 			rank++
 			lastScore = score
 		}
 		switch rank {
-		case 1:
-			str := fmt.Sprintf(
-				"1. %s 🥇 Score: %d\n",
-				s.scoreboard[i].Name, s.scoreboard[i].Score())
-			sb.WriteString(str)
-		case 2:
-			str := fmt.Sprintf(
-				"2. %s 🥈 Score: %d\n",
-				s.scoreboard[i].Name, s.scoreboard[i].Score())
-			sb.WriteString(str)
-		case 3:
-			str := fmt.Sprintf(
-				"3. %s 🥉 Score: %d\n",
-				s.scoreboard[i].Name, s.scoreboard[i].Score())
-			sb.WriteString(str)
+		case 1, 2, 3:
+			sb.WriteString(fmt.Sprintf(
+				"%d. %s %s Score: %d\n",
+				rank, s.scoreboard[i].Name, emojis[rank], s.scoreboard[i].Score()))
 		default:
-			str := fmt.Sprintf(
-				"%d. %s Score: %d\n",
-				rank, s.scoreboard[i].Name, s.scoreboard[i].Score())
-			sb.WriteString(str)
+			break loop
 		}
 	}
+
+	userRank := s.RankOf(userID)
+	if 1 <= userRank && userRank <= 3 {
+		return sb.String()
+	}
+
+	sb.WriteString("...\n")
+
+	index := s.indexOf(userID)
+	to := index + 1
+	if index+1 >= len(s.scoreboard) {
+		to--
+	}
+	if s.scoreboard[index-1].Score() == s.scoreboard[index].Score() {
+		rank = userRank
+	} else {
+		rank = userRank - 1
+	}
+	lastScore = s.scoreboard[index-1].Score()
+	for i := index - 1; ; i++ {
+		sb.WriteString(fmt.Sprintf(
+			"%d. %s Score: %d\n",
+			rank, s.scoreboard[i].Name, s.scoreboard[i].Score()))
+		if i >= to {
+			break
+		}
+		if score := s.scoreboard[i+1].Score(); score != lastScore {
+			rank++
+			lastScore = score
+		}
+	}
+
+	sb.WriteString("...\n")
 	return sb.String()
 }
