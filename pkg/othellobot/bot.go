@@ -731,6 +731,7 @@ func (bot *Bot) handleRematch(query *tgbotapi.CallbackQuery) {
 				tgbotapi.NewInlineKeyboardButtonData("Reject", "reject"+id),
 			),
 		)
+		bot.api.Send(msg)
 
 		text := "Wait for your opponent's response."
 		bot.api.Request(tgbotapi.NewCallback(query.ID, text))
