@@ -416,6 +416,12 @@ func (bot *Bot) startGameOfFriends(query *tgbotapi.CallbackQuery) {
 
 	user2 := query.From
 
+	if *user1 == *user2 {
+		text := "You can't play with yourself!"
+		bot.api.Request(tgbotapi.NewCallbackWithAlert(query.ID, text))
+		return
+	}
+
 	if _, ok := bot.userIDToCurrentGame[user1.ID]; ok {
 		text := util.FirstNameElseLastName(user1) + " is playing another game"
 		bot.api.Request(tgbotapi.NewCallbackWithAlert(query.ID, text))
@@ -470,12 +476,12 @@ func (bot *Bot) startGameOfFriends(query *tgbotapi.CallbackQuery) {
 }
 
 func (bot *Bot) playWithRandomOpponent(query *tgbotapi.CallbackQuery) {
-	user := query.From
+	user1 := query.From
 
 	if len(bot.waitingPlayer) == 0 {
-		bot.waitingPlayer <- user
+		bot.waitingPlayer <- user1
 
-		msg := tgbotapi.NewMessage(user.ID, "Wait until another player joins the game.")
+		msg := tgbotapi.NewMessage(user1.ID, "Wait until another player joins the game.")
 		msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(
 			tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData("Cancel", "cancel"),
@@ -489,8 +495,17 @@ func (bot *Bot) playWithRandomOpponent(query *tgbotapi.CallbackQuery) {
 		return
 	}
 
+	user2 := <-bot.waitingPlayer
+
+	if *user1 == *user2 {
+		text := "You can't play with yourself!"
+		bot.api.Request(tgbotapi.NewCallbackWithAlert(query.ID, text))
+		bot.waitingPlayer <- user2
+		return
+	}
+
 	text := ""
-	if err := bot.startGameOfRandomOpponents(<-bot.waitingPlayer, user); err != nil {
+	if err := bot.startGameOfRandomOpponents(user1, user2); err != nil {
 		text = err.Error()
 	}
 	bot.api.Request(tgbotapi.NewCallbackWithAlert(query.ID, text))
