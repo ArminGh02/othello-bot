@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/ArminGh02/othello-bot/pkg/database"
@@ -43,6 +44,9 @@ type Bot struct {
 	userIDToChatBuddyMutex       sync.Mutex
 	userIDToUserMutex            sync.Mutex
 	userIDToRematchGameIDMutex   sync.Mutex
+
+	gamesPlayedToday uint64
+	usersJoinedToday uint64
 }
 
 func New(token, mongodbURI string) *Bot {
@@ -173,6 +177,7 @@ func (bot *Bot) handleStartCommand(message *tgbotapi.Message) {
 
 	if bot.db.AddPlayer(user.ID, util.FullNameOf(user)) {
 		bot.scoreboard.Insert(bot.db.Find(user.ID))
+		atomic.AddUint64(&bot.usersJoinedToday, 1)
 	}
 
 	log.Printf("Bot started by %v.", user)
@@ -349,8 +354,8 @@ func (bot *Bot) handleGameEnd(game *othellogame.Game, query *tgbotapi.CallbackQu
 	bot.api.Request(tgbotapi.NewCallback(query.ID, "Game is over!"))
 
 	bot.cleanUp(game, query)
-
 	log.Println(game, "is over.")
+	atomic.AddUint64(&bot.gamesPlayedToday, 1)
 }
 
 func (bot *Bot) cleanUp(game *othellogame.Game, query *tgbotapi.CallbackQuery) {
@@ -400,6 +405,7 @@ func (bot *Bot) startGameOfFriends(query *tgbotapi.CallbackQuery) {
 
 	if bot.db.AddPlayer(user2.ID, util.FullNameOf(user2)) {
 		bot.scoreboard.Insert(bot.db.Find(user2.ID))
+		atomic.AddUint64(&bot.usersJoinedToday, 1)
 	}
 
 	game := othellogame.New(user1, user2)
@@ -580,6 +586,7 @@ func (bot *Bot) handleSurrender(query *tgbotapi.CallbackQuery) {
 	bot.scoreboard.UpdateRankOf(loser.ID, 0, 1)
 
 	log.Printf("%s surrendered in %v.\n", loser, game)
+	atomic.AddUint64(&bot.gamesPlayedToday, 1)
 }
 
 func (bot *Bot) handleEndEarly(query *tgbotapi.CallbackQuery) {
@@ -624,6 +631,8 @@ func (bot *Bot) handleEndEarly(query *tgbotapi.CallbackQuery) {
 		)
 
 		bot.api.Request(tgbotapi.CallbackConfig{CallbackQueryID: query.ID})
+
+		atomic.AddUint64(&bot.gamesPlayedToday, 1)
 	} else {
 		msg := fmt.Sprintf("You can end the game if your "+
 			"opponent doesn't place a disk for %d seconds.",
@@ -787,6 +796,7 @@ func (bot *Bot) handleInlineQuery(inlineQuery *tgbotapi.InlineQuery) {
 
 	if bot.db.AddPlayer(user.ID, util.FullNameOf(user)) {
 		bot.scoreboard.Insert(bot.db.Find(user.ID))
+		atomic.AddUint64(&bot.usersJoinedToday, 1)
 	}
 
 	game := tgbotapi.NewInlineQueryResultArticleMarkdownV2(
