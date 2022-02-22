@@ -16,4 +16,4 @@ Features include replays of the games as GIFs, scoreboard, playing with your fri
 
 ![Replay](/doc/replay.gif "Replay")
 
-One of game replays
+One of game replays.
