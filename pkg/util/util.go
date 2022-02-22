@@ -15,7 +15,7 @@ import (
 
 func RemoveInlineKeyboardMarkup() tgbotapi.InlineKeyboardMarkup {
 	return tgbotapi.InlineKeyboardMarkup{
-		InlineKeyboard: make([][]tgbotapi.InlineKeyboardButton, 0),
+		InlineKeyboard: [][]tgbotapi.InlineKeyboardButton{},
 	}
 }
 
