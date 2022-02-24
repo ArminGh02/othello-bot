@@ -37,13 +37,13 @@ func newPlayerDoc(
 
 func (doc *PlayerDoc) String(rank int) string {
 	return fmt.Sprintf(
-		"%s's Profile:\nRank: %d\nWins: %d\nLosses: %d\nDraws: %d\nWin Percentage: %.2f",
+		"%s's Profile:\nRank: %d\nWins: %d\nLosses: %d\nDraws: %d\nWin Percentage: %d",
 		doc.Name,
 		rank,
 		doc.Wins,
 		doc.Losses,
 		doc.Draws,
-		float64(doc.Wins) / float64(doc.Wins + doc.Draws + doc.Losses),
+		int(100 * (float64(doc.Wins) / float64(doc.Wins + doc.Draws + doc.Losses))),
 	)
 }
 
