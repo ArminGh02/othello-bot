@@ -825,6 +825,8 @@ func (bot *Bot) handleAcceptedRematch(query *tgbotapi.CallbackQuery) {
 }
 
 func (bot *Bot) handleRejectedRematch(query *tgbotapi.CallbackQuery) {
+	defer bot.api.Request(tgbotapi.CallbackConfig{CallbackQueryID: query.ID})
+
 	otherUserID, _ := strconv.ParseInt(strings.TrimPrefix(query.Data, "reject"), 10, 64)
 
 	bot.userIDToRematchGameIDMutex.Lock()
@@ -835,21 +837,11 @@ func (bot *Bot) handleRejectedRematch(query *tgbotapi.CallbackQuery) {
 	otherUser, ok := bot.userIDToUser[otherUserID]
 	bot.userIDToUserMutex.Unlock()
 
+	msg := "Rematch request was rejected"
 	if ok {
-		msg := "Rematch request was rejected by " + util.FirstNameElseLastName(otherUser)
-		bot.api.Send(tgbotapi.NewMessage(otherUserID, msg))
+		msg += " by " + util.FirstNameElseLastName(otherUser)
 	}
-
-	bot.api.Send(
-		tgbotapi.NewEditMessageTextAndMarkup(
-			query.From.ID,
-			query.Message.MessageID,
-			"Rematch was rejected.",
-			tgbotapi.NewInlineKeyboardMarkup(),
-		),
-	)
-
-	bot.api.Request(tgbotapi.CallbackConfig{CallbackQueryID: query.ID})
+	bot.api.Send(tgbotapi.NewMessage(otherUserID, msg))
 }
 
 func (bot *Bot) handleInlineQuery(inlineQuery *tgbotapi.InlineQuery) {
