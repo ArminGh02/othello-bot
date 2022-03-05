@@ -667,7 +667,11 @@ func (bot *Bot) handleEndEarly(query *tgbotapi.CallbackQuery) {
 
 	user1 := query.From
 
-	game := bot.userIDToCurrentGame[user1.ID]
+	game, ok := bot.userIDToCurrentGame[user1.ID]
+	if !ok {
+		bot.api.Request(tgbotapi.NewCallback(query.ID, "Game is too old!"))
+		return
+	}
 
 	if game.IsTurnOf(user1) {
 		bot.api.Request(
@@ -802,10 +806,6 @@ func (bot *Bot) handleRematch(query *tgbotapi.CallbackQuery) {
 
 func (bot *Bot) handleAcceptedRematch(query *tgbotapi.CallbackQuery) {
 	otherUserID, _ := strconv.ParseInt(strings.TrimPrefix(query.Data, "reject"), 10, 64)
-
-	bot.userIDToRematchGameIDMutex.Lock()
-	delete(bot.userIDToRematchGameID, otherUserID)
-	bot.userIDToRematchGameIDMutex.Unlock()
 
 	bot.userIDToUserMutex.Lock()
 	otherUser, ok := bot.userIDToUser[otherUserID]
