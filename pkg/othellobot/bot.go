@@ -838,6 +838,9 @@ func (bot *Bot) handleRejectedRematch(query *tgbotapi.CallbackQuery) {
 	bot.userIDToUserMutex.Unlock()
 
 	msg := "Rematch request was rejected"
+
+	bot.api.Send(tgbotapi.NewEditMessageText(query.From.ID, query.Message.MessageID, msg+"."))
+
 	if ok {
 		msg += " by " + util.FirstNameElseLastName(otherUser)
 	}
