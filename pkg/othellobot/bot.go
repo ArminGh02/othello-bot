@@ -805,7 +805,7 @@ func (bot *Bot) handleRematch(query *tgbotapi.CallbackQuery) {
 }
 
 func (bot *Bot) handleAcceptedRematch(query *tgbotapi.CallbackQuery) {
-	otherUserID, _ := strconv.ParseInt(strings.TrimPrefix(query.Data, "reject"), 10, 64)
+	otherUserID, _ := strconv.ParseInt(strings.TrimPrefix(query.Data, "accept"), 10, 64)
 
 	bot.userIDToUserMutex.Lock()
 	otherUser, ok := bot.userIDToUser[otherUserID]
