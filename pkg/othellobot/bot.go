@@ -332,7 +332,7 @@ func (bot *Bot) placeDisk(query *tgbotapi.CallbackQuery) {
 
 		msg, replyMarkup := getRunningGameMsgAndReplyMarkup(
 			game,
-			bot.db.LegalMovesAreShown(user.ID),
+			bot.db.LegalMovesAreShown(game.ActiveUser().ID),
 			query.InlineMessageID != "",
 		)
 		bot.sendEditMessageTextForGame(
