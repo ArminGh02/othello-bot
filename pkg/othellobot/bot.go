@@ -833,17 +833,10 @@ func (bot *Bot) handleRejectedRematch(query *tgbotapi.CallbackQuery) {
 	delete(bot.userIDToRematchGameID, otherUserID)
 	bot.userIDToRematchGameIDMutex.Unlock()
 
-	bot.userIDToUserMutex.Lock()
-	otherUser, ok := bot.userIDToUser[otherUserID]
-	bot.userIDToUserMutex.Unlock()
+	msg := "Rematch request was rejected."
+	bot.api.Send(tgbotapi.NewEditMessageText(query.From.ID, query.Message.MessageID, msg))
 
-	msg := "Rematch request was rejected"
-
-	bot.api.Send(tgbotapi.NewEditMessageText(query.From.ID, query.Message.MessageID, msg+"."))
-
-	if ok {
-		msg += " by " + util.FirstNameElseLastName(otherUser)
-	}
+	msg = util.FirstNameElseLastName(query.From) + " rejected the rematch request."
 	bot.api.Send(tgbotapi.NewMessage(otherUserID, msg))
 }
 
