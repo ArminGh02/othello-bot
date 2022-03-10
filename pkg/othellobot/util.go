@@ -11,6 +11,46 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
+func (bot *Bot) sendEditMessageTextForGame(
+	msgText string,
+	replyMarkup *tgbotapi.InlineKeyboardMarkup,
+	user1, user2 *tgbotapi.User,
+	inlineMessageID string,
+) {
+	if inlineMessageID != "" {
+		bot.api.Send(tgbotapi.EditMessageTextConfig{
+			BaseEdit: tgbotapi.BaseEdit{
+				InlineMessageID: inlineMessageID,
+				ReplyMarkup:     replyMarkup,
+			},
+			Text: msgText,
+		})
+		return
+	}
+
+	bot.userIDToMessageIDMutex.Lock()
+	messageID1 := bot.userIDToMessageID[user1.ID]
+	messageID2 := bot.userIDToMessageID[user2.ID]
+	bot.userIDToMessageIDMutex.Unlock()
+
+	msg1 := tgbotapi.NewEditMessageTextAndMarkup(user1.ID, messageID1, msgText, *replyMarkup)
+	msg2 := tgbotapi.NewEditMessageTextAndMarkup(user2.ID, messageID2, msgText, *replyMarkup)
+
+	bot.api.Send(msg1)
+	bot.api.Send(msg2)
+}
+
+func (bot *Bot) opponentOf(user *tgbotapi.User) (*tgbotapi.User, error) {
+	bot.userIDToCurrentGameMutex.Lock()
+	defer bot.userIDToCurrentGameMutex.Unlock()
+
+	game, ok := bot.userIDToCurrentGame[user.ID]
+	if !ok {
+		return nil, fmt.Errorf("Game is too old!")
+	}
+	return game.OpponentOf(user), nil
+}
+
 func getRunningGameMsgAndReplyMarkup(
 	game *othellogame.Game,
 	showLegalMoves, inline bool,
