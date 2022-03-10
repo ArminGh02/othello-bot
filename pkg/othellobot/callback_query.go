@@ -105,7 +105,7 @@ func (bot *Bot) placeDisk(query *tgbotapi.CallbackQuery) {
 		bot.handleGameEnd(game, query)
 	} else {
 		bot.userIDToLastTimeActiveMutex.Lock()
-		bot.userIDToLastTimeActive[user.ID] = time.Now()
+		bot.userIDToLastTimeActive[game.OpponentOf(user).ID] = time.Now()
 		bot.userIDToLastTimeActiveMutex.Unlock()
 
 		msg, replyMarkup := getRunningGameMsgAndReplyMarkup(
