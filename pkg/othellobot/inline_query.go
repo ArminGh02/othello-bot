@@ -66,7 +66,7 @@ func (bot *Bot) resendGame(inlineQuery *tgbotapi.InlineQuery) {
 			InlineQueryID:     inlineQuery.ID,
 			Results:           []interface{}{},
 			CacheTime:         0,
-			SwitchPMText:      "Game is too old!",
+			SwitchPMText:      errTooOldGame.Error(),
 			SwitchPMParameter: "oldGame",
 		})
 		return

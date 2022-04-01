@@ -46,7 +46,7 @@ func (bot *Bot) opponentOf(user *tgbotapi.User) (*tgbotapi.User, error) {
 
 	game, ok := bot.userIDToCurrentGame[user.ID]
 	if !ok {
-		return nil, fmt.Errorf("Game is too old!")
+		return nil, errTooOldGame
 	}
 	return game.OpponentOf(user), nil
 }

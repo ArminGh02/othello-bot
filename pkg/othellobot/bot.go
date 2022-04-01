@@ -1,6 +1,7 @@
 package othellobot
 
 import (
+	"errors"
 	"log"
 	"sync"
 	"sync/atomic"
@@ -13,6 +14,8 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	cron "github.com/robfig/cron/v3"
 )
+
+var errTooOldGame = errors.New("game is too old")
 
 type Bot struct {
 	token                        string
@@ -69,10 +72,6 @@ func (bot *Bot) Run() {
 		log.Panicln(err)
 	}
 
-	updateConfig := tgbotapi.NewUpdate(0)
-	updateConfig.Timeout = 60
-	updates := bot.api.GetUpdatesChan(updateConfig)
-
 	defer bot.db.Disconnect()
 
 	log.Println("Bot started.")
@@ -83,6 +82,10 @@ func (bot *Bot) Run() {
 		atomic.SwapUint64(&bot.usersJoinedToday, 0)
 	})
 	c.Start()
+
+	updateConfig := tgbotapi.NewUpdate(0)
+	updateConfig.Timeout = 60
+	updates := bot.api.GetUpdatesChan(updateConfig)
 
 	for update := range updates {
 		go bot.handleUpdate(update)

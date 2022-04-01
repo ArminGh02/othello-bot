@@ -66,7 +66,7 @@ func (bot *Bot) sendGameReplay(user *tgbotapi.User, data string) error {
 	movesSequence, ok := bot.gameIDToMovesSequence[gameID]
 	bot.gameIDToMovesSequenceMutex.Unlock()
 	if !ok {
-		return fmt.Errorf("Game is too old!")
+		return errTooOldGame
 	}
 
 	whiteStarted := data[0] == 'w'
@@ -91,7 +91,7 @@ func (bot *Bot) placeDisk(query *tgbotapi.CallbackQuery) {
 
 	game, ok := bot.userIDToCurrentGame[user.ID]
 	if !ok {
-		bot.api.Request(tgbotapi.NewCallbackWithAlert(query.ID, "Game is too old!"))
+		bot.api.Request(tgbotapi.NewCallbackWithAlert(query.ID, errTooOldGame.Error()))
 		return
 	}
 
@@ -368,7 +368,7 @@ func (bot *Bot) toggleShowingLegalMoves(query *tgbotapi.CallbackQuery) {
 
 	game, ok := bot.userIDToCurrentGame[user.ID]
 	if !ok {
-		bot.api.Request(tgbotapi.NewCallbackWithAlert(query.ID, "Game is too old!"))
+		bot.api.Request(tgbotapi.NewCallbackWithAlert(query.ID, errTooOldGame.Error()))
 		return
 	}
 
@@ -405,7 +405,7 @@ func (bot *Bot) handleSurrender(query *tgbotapi.CallbackQuery) {
 
 	game, ok := bot.userIDToCurrentGame[loser.ID]
 	if !ok {
-		bot.api.Request(tgbotapi.NewCallbackWithAlert(query.ID, "Game is too old!"))
+		bot.api.Request(tgbotapi.NewCallbackWithAlert(query.ID, errTooOldGame.Error()))
 		return
 	}
 
@@ -447,7 +447,7 @@ func (bot *Bot) handleEndEarly(query *tgbotapi.CallbackQuery) {
 
 	game, ok := bot.userIDToCurrentGame[user1.ID]
 	if !ok {
-		bot.api.Request(tgbotapi.NewCallback(query.ID, "Game is too old!"))
+		bot.api.Request(tgbotapi.NewCallback(query.ID, errTooOldGame.Error()))
 		return
 	}
 
@@ -542,7 +542,7 @@ func (bot *Bot) handleRematch(query *tgbotapi.CallbackQuery) {
 	bot.userIDToUserMutex.Unlock()
 
 	if !ok {
-		bot.api.Request(tgbotapi.NewCallbackWithAlert(query.ID, "Game is too old!"))
+		bot.api.Request(tgbotapi.NewCallbackWithAlert(query.ID, errTooOldGame.Error()))
 		return
 	}
 
@@ -589,7 +589,7 @@ func (bot *Bot) handleAcceptedRematch(query *tgbotapi.CallbackQuery) {
 	otherUser, ok := bot.userIDToUser[otherUserID]
 	bot.userIDToUserMutex.Unlock()
 	if !ok {
-		bot.api.Request(tgbotapi.NewCallbackWithAlert(query.ID, "Game is too old!"))
+		bot.api.Request(tgbotapi.NewCallbackWithAlert(query.ID, errTooOldGame.Error()))
 		return
 	}
 
