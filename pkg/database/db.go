@@ -36,14 +36,18 @@ func newPlayerDoc(
 }
 
 func (doc *PlayerDoc) String(rank int) string {
+	winPercentage := 0
+	if matches := doc.Wins + doc.Draws + doc.Losses; matches > 0 {
+		winPercentage = 100 * int(float64(doc.Wins) / float64(matches))
+	}
 	return fmt.Sprintf(
-		"%s's Profile:\nRank: %d\nWins: %d\nLosses: %d\nDraws: %d\nWin Percentage: %d",
+		"%s's Profile:\nRank: %d\nWins: %d\nLosses: %d\nDraws: %d\nWin Percentage: %d%%",
 		doc.Name,
 		rank,
 		doc.Wins,
 		doc.Losses,
 		doc.Draws,
-		int(100 * (float64(doc.Wins) / float64(doc.Wins + doc.Draws + doc.Losses))),
+		winPercentage,
 	)
 }
 
