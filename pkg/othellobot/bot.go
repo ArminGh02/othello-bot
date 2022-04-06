@@ -76,7 +76,12 @@ func (bot *Bot) Run() {
 
 	log.Println("Bot started.")
 
-	c := cron.New()
+	loc, err := time.LoadLocation("Asia/Tehran")
+	if err != nil {
+		log.Panicln(err)
+	}
+
+	c := cron.New(cron.WithLocation(loc))
 	c.AddFunc("@daily", func() {
 		atomic.SwapUint64(&bot.gamesPlayedToday, 0)
 		atomic.SwapUint64(&bot.usersJoinedToday, 0)
