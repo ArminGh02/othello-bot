@@ -17,6 +17,15 @@ import (
 
 var errTooOldGame = errors.New("game is too old")
 
+type gameData struct {
+	moveSequence    []coord.Coord
+	whiteStarts     bool
+	whitePlayerName string
+	blackPlayerName string
+	whiteScore      int
+	blackScore      int
+}
+
 type Bot struct {
 	token                        string
 	api                          *tgbotapi.BotAPI
@@ -24,7 +33,7 @@ type Bot struct {
 	scoreboard                   util.Scoreboard
 	waitingPlayer                chan *tgbotapi.User
 	inlineMessageIDToUser        map[string]*tgbotapi.User
-	gameIDToMovesSequence        map[string][]coord.Coord
+	gameIDToGameData             map[string]gameData
 	gameIDToInlineMessageID      map[string]string
 	userIDToCurrentGame          map[int64]*othellogame.Game
 	userIDToLastTimeActive       map[int64]time.Time
@@ -54,7 +63,7 @@ func New(token, mongodbURI string) *Bot {
 		scoreboard:              util.NewScoreboard(db.GetAllPlayers()),
 		waitingPlayer:           make(chan *tgbotapi.User, 1),
 		inlineMessageIDToUser:   make(map[string]*tgbotapi.User),
-		gameIDToMovesSequence:   make(map[string][]coord.Coord),
+		gameIDToGameData:        make(map[string]gameData),
 		gameIDToInlineMessageID: make(map[string]string),
 		userIDToCurrentGame:     make(map[int64]*othellogame.Game),
 		userIDToLastTimeActive:  make(map[int64]time.Time),

@@ -119,7 +119,10 @@ func (bot *Bot) askGameMode(message *tgbotapi.Message) {
 		"or play with your friends in chats!"
 	msg := tgbotapi.NewMessage(message.Chat.ID, msgText)
 	msg.ReplyMarkup = buildGameModeKeyboard()
-	bot.api.Send(msg)
+	_, err := bot.api.Send(msg)
+	if err != nil {
+		log.Panicln(err)
+	}
 }
 
 func (bot *Bot) showScoreboard(message *tgbotapi.Message) {

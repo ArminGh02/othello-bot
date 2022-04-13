@@ -10,6 +10,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/ArminGh02/othello-bot/pkg/consts"
 	"github.com/ArminGh02/othello-bot/pkg/gifmaker"
 	"github.com/ArminGh02/othello-bot/pkg/othellogame"
 	"github.com/ArminGh02/othello-bot/pkg/util"
@@ -59,21 +60,29 @@ func (bot *Bot) handleCallbackQuery(query *tgbotapi.CallbackQuery) {
 }
 
 func (bot *Bot) sendGameReplay(user *tgbotapi.User, data string) error {
-	data = strings.TrimPrefix(data, "replay")
-	gameID := data[1:]
+	gameID := strings.TrimPrefix(data, "replay")
 
 	bot.gameIDToMovesSequenceMutex.Lock()
-	movesSequence, ok := bot.gameIDToMovesSequence[gameID]
+	gameData, ok := bot.gameIDToGameData[gameID]
 	bot.gameIDToMovesSequenceMutex.Unlock()
 	if !ok {
 		return errTooOldGame
 	}
 
-	whiteStarted := data[0] == 'w'
-
 	gifFilename := gameID + ".gif"
-	gifmaker.Make(gifFilename, movesSequence, whiteStarted)
-	bot.api.Send(tgbotapi.NewAnimation(user.ID, tgbotapi.FilePath(gifFilename)))
+	gifmaker.Make(gifFilename, gameData.moveSequence, gameData.whiteStarts)
+
+	gameGIF := tgbotapi.NewAnimation(user.ID, tgbotapi.FilePath(gifFilename))
+	gameGIF.Caption = fmt.Sprintf(
+		"%s White: %s | Score: %d\n%s Black: %s | Score: %d",
+		consts.WhiteDiskEmoji,
+		gameData.whitePlayerName,
+		gameData.whiteScore,
+		consts.BlackDiskEmoji,
+		gameData.blackPlayerName,
+		gameData.blackScore,
+	)
+	bot.api.Send(gameGIF)
 
 	err := os.Remove(gifFilename)
 	if err != nil {
@@ -137,7 +146,7 @@ func (bot *Bot) handleGameEnd(game *othellogame.Game, query *tgbotapi.CallbackQu
 	}
 
 	bot.gameIDToMovesSequenceMutex.Lock()
-	bot.gameIDToMovesSequence[game.ID()] = game.MovesSequence()
+	bot.gameIDToGameData[game.ID()] = newGameData(game)
 	bot.gameIDToMovesSequenceMutex.Unlock()
 
 	msg, replyMarkup := getGameOverMsgAndReplyMarkup(
@@ -410,7 +419,7 @@ func (bot *Bot) handleSurrender(query *tgbotapi.CallbackQuery) {
 	}
 
 	bot.gameIDToMovesSequenceMutex.Lock()
-	bot.gameIDToMovesSequence[game.ID()] = game.MovesSequence()
+	bot.gameIDToGameData[game.ID()] = newGameData(game)
 	bot.gameIDToMovesSequenceMutex.Unlock()
 
 	winner := game.OpponentOf(loser)
@@ -467,7 +476,7 @@ func (bot *Bot) handleEndEarly(query *tgbotapi.CallbackQuery) {
 	secondsSinceLastActive := time.Since(lastActiveTime).Seconds()
 	if secondsSinceLastActive > 90 {
 		bot.gameIDToMovesSequenceMutex.Lock()
-		bot.gameIDToMovesSequence[game.ID()] = game.MovesSequence()
+		bot.gameIDToGameData[game.ID()] = newGameData(game)
 		bot.gameIDToMovesSequenceMutex.Unlock()
 
 		msg, replyMarkup := getEarlyEndMsgAndReplyMarkup(

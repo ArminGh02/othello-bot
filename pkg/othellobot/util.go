@@ -11,6 +11,17 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
+func newGameData(game *othellogame.Game) gameData {
+	return gameData{
+		moveSequence:    game.MovesSequence(),
+		whiteStarts:     game.WhiteStarted(),
+		whitePlayerName: util.FirstNameElseLastName(game.WhiteUser()),
+		blackPlayerName: util.FirstNameElseLastName(game.BlackUser()),
+		whiteScore:      game.WhiteDisks(),
+		blackScore:      game.BlackDisks(),
+	}
+}
+
 func (bot *Bot) sendEditMessageTextForGame(
 	msgText string,
 	replyMarkup *tgbotapi.InlineKeyboardMarkup,
@@ -178,13 +189,7 @@ func buildGameOverKeyboard(
 	botUsername string,
 	inline bool,
 ) *tgbotapi.InlineKeyboardMarkup {
-	button2data := "replay"
-	if game.WhiteStarted() {
-		button2data += "w"
-	} else {
-		button2data += "b"
-	}
-	button2data += game.ID()
+	button2data := "replay" + game.ID()
 
 	var button1, button2 tgbotapi.InlineKeyboardButton
 	if inline {
