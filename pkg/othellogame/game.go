@@ -1,6 +1,7 @@
 package othellogame
 
 import (
+	"errors"
 	"fmt"
 	"log"
 
@@ -233,13 +234,13 @@ func (game *Game) IsTurnOf(user *tgbotapi.User) bool {
 
 func (game *Game) checkPlacingDisk(where coord.Coord, user *tgbotapi.User) error {
 	if !game.IsTurnOf(user) {
-		return fmt.Errorf("It's not your turn!")
+		return errors.New("It's not your turn!")
 	}
 	if game.board[where.Y][where.X] != cell.Empty {
-		return fmt.Errorf("That cell is not empty!")
+		return errors.New("That cell is not empty!")
 	}
 	if !game.placeableCoords.Contains(where) {
-		return fmt.Errorf("You can't place a disk there!")
+		return errors.New("You can't place a disk there!")
 	}
 	return nil
 }
