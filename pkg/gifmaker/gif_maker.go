@@ -31,7 +31,6 @@ var (
 
 func Make(outputFilename string, movesSequence []coord.Coord, whiteStarts bool) {
 	frames := getGameFrames(movesSequence, whiteStarts)
-	frames = append(frames, frames[len(frames) - 1])
 	delays := make([]int, len(frames))
 	for i := range delays {
 		delays[i] = 200

@@ -29,7 +29,7 @@ var offset = [direction.Count]coord.Coord{
 
 type Game struct {
 	id              string
-	users           [2]tgbotapi.User
+	users           [2]*tgbotapi.User
 	disksCount      [2]int
 	board           [boardSize][boardSize]cell.Cell
 	turn            turn.Turn
@@ -40,123 +40,123 @@ type Game struct {
 }
 
 func New(user1, user2 *tgbotapi.User) *Game {
-	g := &Game{
+	game := &Game{
 		id:              xid.New().String(),
-		users:           [2]tgbotapi.User{*user1, *user2},
+		users:           [2]*tgbotapi.User{user1, user2},
 		disksCount:      [2]int{2, 2},
 		turn:            turn.Random(),
 		placeableCoords: sets.New[coord.Coord](),
 		movesSequence:   make([]coord.Coord, 0, boardSize*boardSize-4),
 	}
 
-	g.whiteStarted = g.turn == turn.White
+	game.whiteStarted = game.turn == turn.White
 
-	mid := len(g.board)/2 - 1
-	g.board[mid][mid] = cell.White
-	g.board[mid][mid+1] = cell.Black
-	g.board[mid+1][mid] = cell.Black
-	g.board[mid+1][mid+1] = cell.White
+	mid := len(game.board)/2 - 1
+	game.board[mid][mid] = cell.White
+	game.board[mid][mid+1] = cell.Black
+	game.board[mid+1][mid] = cell.Black
+	game.board[mid+1][mid+1] = cell.White
 
-	g.updatePlaceableCoords()
+	game.updatePlaceableCoords()
 
-	return g
+	return game
 }
 
-func (g *Game) String() string {
+func (game *Game) String() string {
 	return fmt.Sprintf(
 		"Game between %s and %s",
-		util.UsernameElseName(&g.users[0]),
-		util.UsernameElseName(&g.users[1]),
+		util.UsernameElseName(game.users[0]),
+		util.UsernameElseName(game.users[1]),
 	)
 }
 
-func (g *Game) ID() string {
-	return g.id
+func (game *Game) ID() string {
+	return game.id
 }
 
-func (g *Game) Board() [][]cell.Cell {
-	res := make([][]cell.Cell, len(g.board))
-	for i := range g.board {
-		res[i] = g.board[i][:]
+func (game *Game) Board() [][]cell.Cell {
+	res := make([][]cell.Cell, len(game.board))
+	for i := range game.board {
+		res[i] = game.board[i][:]
 	}
 	return res
 }
 
-func (g *Game) ActiveColor() string {
-	return g.turn.Cell().Emoji()
+func (game *Game) ActiveColor() string {
+	return game.turn.Cell().Emoji()
 }
 
-func (g *Game) ActiveUser() *tgbotapi.User {
-	return &g.users[g.turn.Int()]
+func (game *Game) ActiveUser() *tgbotapi.User {
+	return game.users[game.turn.Int()]
 }
 
-func (g *Game) WhiteUser() *tgbotapi.User {
-	return &g.users[color.White]
+func (game *Game) WhiteUser() *tgbotapi.User {
+	return game.users[color.White]
 }
 
-func (g *Game) BlackUser() *tgbotapi.User {
-	return &g.users[color.Black]
+func (game *Game) BlackUser() *tgbotapi.User {
+	return game.users[color.Black]
 }
 
-func (g *Game) WhiteDisks() int {
-	return g.disksCount[color.White]
+func (game *Game) WhiteDisks() int {
+	return game.disksCount[color.White]
 }
 
-func (g *Game) BlackDisks() int {
-	return g.disksCount[color.Black]
+func (game *Game) BlackDisks() int {
+	return game.disksCount[color.Black]
 }
 
-func (g *Game) IsEnded() bool {
-	return g.ended
+func (game *Game) IsEnded() bool {
+	return game.ended
 }
 
-func (g *Game) Winner() *tgbotapi.User {
-	if g.disksCount[color.White] == g.disksCount[color.Black] {
+func (game *Game) Winner() *tgbotapi.User {
+	if game.disksCount[color.White] == game.disksCount[color.Black] {
 		return nil
 	}
-	if g.disksCount[color.White] > g.disksCount[color.Black] {
-		return &g.users[color.White]
+	if game.disksCount[color.White] > game.disksCount[color.Black] {
+		return game.users[color.White]
 	}
-	return &g.users[color.Black]
+	return game.users[color.Black]
 }
 
-func (g *Game) Loser() *tgbotapi.User {
-	winner := g.Winner()
+func (game *Game) Loser() *tgbotapi.User {
+	winner := game.Winner()
 	if winner == nil {
 		return nil
 	}
-	return g.OpponentOf(winner)
+	return game.OpponentOf(winner)
 }
 
-func (g *Game) OpponentOf(user *tgbotapi.User) *tgbotapi.User {
-	if *user == *g.WhiteUser() {
-		return g.BlackUser()
+func (game *Game) OpponentOf(user *tgbotapi.User) *tgbotapi.User {
+	if *user == *game.WhiteUser() {
+		return game.BlackUser()
 	}
-	if *user == *g.BlackUser() {
-		return g.WhiteUser()
+	if *user == *game.BlackUser() {
+		return game.WhiteUser()
 	}
 	log.Panicln("Invalid state: OpponentOf called with an argument unequal to both game users.")
 	panic("")
 }
 
-func (g *Game) WinnerColor() string {
-	winner := g.Winner()
+func (game *Game) WinnerColor() string {
+	winner := game.Winner()
 	if winner == nil {
 		log.Panicln("Invalid state: WinnerColor called when the game is a draw.")
 	}
-	if *winner == g.users[color.White] {
+	if *winner == *game.users[color.White] {
 		return cell.White.Emoji()
 	}
 	return cell.Black.Emoji()
 }
 
-func (g *Game) InlineKeyboard(showLegalMoves bool) [][]tgbotapi.InlineKeyboardButton {
-	keyboard := make([][]tgbotapi.InlineKeyboardButton, len(g.board))
-	for y := range g.board {
-		keyboard[y] = make([]tgbotapi.InlineKeyboardButton, len(g.board[y]))
-		for x, cell := range g.board[y] {
+func (game *Game) InlineKeyboard(showLegalMoves bool) [][]tgbotapi.InlineKeyboardButton {
+	keyboard := make([][]tgbotapi.InlineKeyboardButton, len(game.board))
+	for y := range game.board {
+		keyboard[y] = make([]tgbotapi.InlineKeyboardButton, len(game.board[y]))
+		for x, cell := range game.board[y] {
 			var buttonText string
-			if showLegalMoves && g.placeableCoords.Contains(coord.New(x, y)) {
+			if showLegalMoves && game.placeableCoords.Contains(coord.New(x, y)) {
 				buttonText = consts.LegalMoveEmoji
 			} else {
 				buttonText = cell.Emoji()
@@ -171,11 +171,11 @@ func (g *Game) InlineKeyboard(showLegalMoves bool) [][]tgbotapi.InlineKeyboardBu
 	return keyboard
 }
 
-func (g *Game) EndInlineKeyboard() [][]tgbotapi.InlineKeyboardButton {
-	keyboard := make([][]tgbotapi.InlineKeyboardButton, len(g.board))
-	for y := range g.board {
-		keyboard[y] = make([]tgbotapi.InlineKeyboardButton, len(g.board[y]))
-		for x, cell := range g.board[y] {
+func (game *Game) EndInlineKeyboard() [][]tgbotapi.InlineKeyboardButton {
+	keyboard := make([][]tgbotapi.InlineKeyboardButton, len(game.board))
+	for y := range game.board {
+		keyboard[y] = make([]tgbotapi.InlineKeyboardButton, len(game.board[y]))
+		for x, cell := range game.board[y] {
 			keyboard[y][x] = tgbotapi.NewInlineKeyboardButtonData(
 				cell.Emoji(),
 				"gameOver",
@@ -185,102 +185,102 @@ func (g *Game) EndInlineKeyboard() [][]tgbotapi.InlineKeyboardButton {
 	return keyboard
 }
 
-func (g *Game) WhiteStarted() bool {
-	return g.whiteStarted
+func (game *Game) WhiteStarted() bool {
+	return game.whiteStarted
 }
 
-func (g *Game) MovesSequence() []coord.Coord {
-	return g.movesSequence
+func (game *Game) MovesSequence() []coord.Coord {
+	return game.movesSequence
 }
 
-func (g *Game) SetTurn(white bool) {
-	g.turn = turn.Turn(!white)
-	if len(g.movesSequence) == 0 {
-		g.whiteStarted = white
+func (game *Game) SetTurn(white bool) {
+	game.turn = turn.Turn(!white)
+	if len(game.movesSequence) == 0 {
+		game.whiteStarted = white
 	}
 }
 
-func (g *Game) PlaceDisk(where coord.Coord, user *tgbotapi.User) error {
-	if err := g.checkPlacingDisk(where, user); err != nil {
+func (game *Game) PlaceDisk(where coord.Coord, user *tgbotapi.User) error {
+	if err := game.checkPlacingDisk(where, user); err != nil {
 		return err
 	}
-	g.PlaceDiskUnchecked(where)
+	game.PlaceDiskUnchecked(where)
 	return nil
 }
 
-func (g *Game) PlaceDiskUnchecked(where coord.Coord) {
-	g.board[where.Y][where.X] = g.turn.Cell()
-	g.flipDisks(where)
+func (game *Game) PlaceDiskUnchecked(where coord.Coord) {
+	game.board[where.Y][where.X] = game.turn.Cell()
+	game.flipDisks(where)
 
 	for i := 0; i < 2; i++ {
-		g.passTurn()
-		g.updatePlaceableCoords()
-		if !g.placeableCoords.IsEmpty() {
+		game.passTurn()
+		game.updatePlaceableCoords()
+		if !game.placeableCoords.IsEmpty() {
 			break
 		}
 	}
 
-	if g.placeableCoords.IsEmpty() {
-		g.ended = true
+	if game.placeableCoords.IsEmpty() {
+		game.ended = true
 	}
 
-	g.movesSequence = append(g.movesSequence, where)
+	game.movesSequence = append(game.movesSequence, where)
 }
 
-func (g *Game) IsTurnOf(user *tgbotapi.User) bool {
-	return *g.ActiveUser() == *user
+func (game *Game) IsTurnOf(user *tgbotapi.User) bool {
+	return *game.ActiveUser() == *user
 }
 
-func (g *Game) checkPlacingDisk(where coord.Coord, user *tgbotapi.User) error {
-	if !g.IsTurnOf(user) {
+func (game *Game) checkPlacingDisk(where coord.Coord, user *tgbotapi.User) error {
+	if !game.IsTurnOf(user) {
 		return fmt.Errorf("It's not your turn!")
 	}
-	if g.board[where.Y][where.X] != cell.Empty {
+	if game.board[where.Y][where.X] != cell.Empty {
 		return fmt.Errorf("That cell is not empty!")
 	}
-	if !g.placeableCoords.Contains(where) {
+	if !game.placeableCoords.Contains(where) {
 		return fmt.Errorf("You can't place a disk there!")
 	}
 	return nil
 }
 
-func (g *Game) flipDisks(where coord.Coord) {
-	opponent := g.turn.Cell().Reversed()
-	directionsToFlip := g.findDirectionsToFlip(where, false)
+func (game *Game) flipDisks(where coord.Coord) {
+	opponent := game.turn.Cell().Reversed()
+	directionsToFlip := game.findDirectionsToFlip(where, false)
 	for _, dir := range directionsToFlip {
 		c := coord.Plus(where, offset[dir])
-		for g.board[c.Y][c.X] == opponent {
-			g.board[c.Y][c.X] = g.turn.Cell()
+		for game.board[c.Y][c.X] == opponent {
+			game.board[c.Y][c.X] = game.turn.Cell()
 			c.Plus(offset[dir])
 		}
 	}
-	g.updateDisksCount()
+	game.updateDisksCount()
 }
 
-func (g *Game) findDirectionsToFlip(
+func (game *Game) findDirectionsToFlip(
 	where coord.Coord,
 	mustBeEmptyCell bool,
 ) []direction.Direction {
-	opponent := g.turn.Cell().Reversed()
+	opponent := game.turn.Cell().Reversed()
 	res := make([]direction.Direction, 0, direction.Count)
 
-	if mustBeEmptyCell && g.board[where.Y][where.X] != cell.Empty {
+	if mustBeEmptyCell && game.board[where.Y][where.X] != cell.Empty {
 		return res
 	}
 
 	for dir := direction.NorthWest; dir < direction.Count; dir++ {
 		c := coord.Plus(where, offset[dir])
-		if isValidCoord(c, len(g.board)) && g.board[c.Y][c.X] == opponent {
+		if isValidCoord(c, len(game.board)) && game.board[c.Y][c.X] == opponent {
 		loop:
 			for {
 				c.Plus(offset[dir])
 
-				if !isValidCoord(c, len(g.board)) {
+				if !isValidCoord(c, len(game.board)) {
 					break
 				}
 
-				switch g.board[c.Y][c.X] {
-				case g.turn.Cell():
+				switch game.board[c.Y][c.X] {
+				case game.turn.Cell():
 					res = append(res, dir)
 					break loop
 				case cell.Empty:
@@ -296,28 +296,28 @@ func isValidCoord(c coord.Coord, length int) bool {
 	return c.X >= 0 && c.Y >= 0 && c.X < length && c.Y < length
 }
 
-func (g *Game) passTurn() {
-	g.turn = !g.turn
+func (game *Game) passTurn() {
+	game.turn = !game.turn
 }
 
-func (g *Game) updatePlaceableCoords() {
-	g.placeableCoords.Clear()
-	for y := range g.board {
-		for x := range g.board[y] {
-			if c := coord.New(x, y); g.isPlaceableCoord(c) {
-				g.placeableCoords.Insert(c)
+func (game *Game) updatePlaceableCoords() {
+	game.placeableCoords.Clear()
+	for y := range game.board {
+		for x := range game.board[y] {
+			if c := coord.New(x, y); game.isPlaceableCoord(c) {
+				game.placeableCoords.Insert(c)
 			}
 		}
 	}
 }
 
-func (g *Game) isPlaceableCoord(where coord.Coord) bool {
-	return len(g.findDirectionsToFlip(where, true)) > 0
+func (game *Game) isPlaceableCoord(where coord.Coord) bool {
+	return len(game.findDirectionsToFlip(where, true)) > 0
 }
 
-func (g *Game) updateDisksCount() {
+func (game *Game) updateDisksCount() {
 	white, black := 0, 0
-	for _, row := range g.board {
+	for _, row := range game.board {
 		for _, c := range row {
 			switch c {
 			case cell.White:
@@ -327,6 +327,6 @@ func (g *Game) updateDisksCount() {
 			}
 		}
 	}
-	g.disksCount[color.White] = white
-	g.disksCount[color.Black] = black
+	game.disksCount[color.White] = white
+	game.disksCount[color.Black] = black
 }

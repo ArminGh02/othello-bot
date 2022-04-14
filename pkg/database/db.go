@@ -19,22 +19,6 @@ type PlayerDoc struct {
 	LegalMovesAreShown bool   `bson:"legal_moves_are_shown"`
 }
 
-func newPlayerDoc(
-	userID int64,
-	name string,
-	wins, losses, draws int,
-	legalMovesAreShown bool,
-) *PlayerDoc {
-	return &PlayerDoc{
-		UserID:             userID,
-		Name:               name,
-		Wins:               wins,
-		Losses:             losses,
-		Draws:              draws,
-		LegalMovesAreShown: legalMovesAreShown,
-	}
-}
-
 func (doc *PlayerDoc) String(rank int) string {
 	winPercentage := 0
 	if matches := doc.Wins + doc.Draws + doc.Losses; matches > 0 {
@@ -81,7 +65,14 @@ func (db *Handler) AddPlayer(userID int64, name string) (added bool) {
 		return false
 	}
 
-	doc := newPlayerDoc(userID, name, 0, 0, 0, true)
+	doc := &PlayerDoc{
+		UserID:             userID,
+		Name:               name,
+		Wins:               0,
+		Losses:             0,
+		Draws:              0,
+		LegalMovesAreShown: true,
+	}
 	_, err = db.coll.InsertOne(context.TODO(), doc)
 	if err != nil {
 		log.Panicln(err)

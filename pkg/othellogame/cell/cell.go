@@ -24,7 +24,7 @@ func (c Cell) Emoji() string {
 	case White:
 		return consts.WhiteDiskEmoji
 	default:
-		log.Panicln(fmt.Sprintf("Invalid receiver for Cell.Emoji: %v", c))
+		log.Panicf("Invalid receiver for Cell.Emoji: %v\n", c)
 		panic("")
 	}
 }
@@ -36,7 +36,7 @@ func (c Cell) Reversed() Cell {
 	case White:
 		return Black
 	default:
-		log.Panicln(fmt.Sprintf("Invalid receiver for Cell.Emoji: %v", c))
+		log.Panicf("Invalid receiver for Cell.Emoji: %v\n", c)
 		panic("")
 	}
 }
