@@ -11,6 +11,7 @@ import (
 	"github.com/ArminGh02/othello-bot/pkg/othellogame/turn"
 	"github.com/ArminGh02/othello-bot/pkg/util"
 	"github.com/ArminGh02/othello-bot/pkg/util/coord"
+	"github.com/ArminGh02/othello-bot/pkg/util/sets"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/rs/xid"
 )
@@ -32,7 +33,7 @@ type Game struct {
 	disksCount      [2]int
 	board           [boardSize][boardSize]cell.Cell
 	turn            turn.Turn
-	placeableCoords util.CoordSet
+	placeableCoords sets.Set[coord.Coord]
 	ended           bool
 	whiteStarted    bool
 	movesSequence   []coord.Coord
@@ -44,7 +45,7 @@ func New(user1, user2 *tgbotapi.User) *Game {
 		users:           [2]tgbotapi.User{*user1, *user2},
 		disksCount:      [2]int{2, 2},
 		turn:            turn.Random(),
-		placeableCoords: util.NewCoordSet(),
+		placeableCoords: sets.New[coord.Coord](),
 		movesSequence:   make([]coord.Coord, 0, boardSize*boardSize-4),
 	}
 
