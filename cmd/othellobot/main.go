@@ -18,7 +18,7 @@ func main() {
 	}
 
 	log.SetFlags(0)
-	log.SetOutput(logging.Writer{Loc: loc})
+	log.SetOutput(&logging.Writer{Loc: loc})
 
 	err = godotenv.Load()
 	if err != nil {
