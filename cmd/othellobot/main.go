@@ -6,14 +6,23 @@ import (
 	"os"
 	"time"
 
+	"github.com/ArminGh02/othello-bot/pkg/logging"
 	"github.com/ArminGh02/othello-bot/pkg/othellobot"
 	"github.com/joho/godotenv"
 )
 
 func main() {
-	err := godotenv.Load()
+	loc, err := time.LoadLocation("Asia/Tehran")
 	if err != nil {
-		log.Fatalln("Error loading .env file")
+		log.Fatalln("Error loading location: " + err.Error())
+	}
+
+	log.SetFlags(0)
+	log.SetOutput(logging.Writer{Loc: loc})
+
+	err = godotenv.Load()
+	if err != nil {
+		log.Fatalln("Error loading .env file: " + err.Error())
 	}
 
 	token := os.Getenv("OTHELLO_TOKEN")
