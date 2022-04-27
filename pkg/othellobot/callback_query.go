@@ -19,7 +19,7 @@ import (
 )
 
 func (bot *Bot) handleCallbackQuery(query *tgbotapi.CallbackQuery) {
-	switch data := query.Data; data {
+	switch query.Data {
 	case "join":
 		bot.startGameOfFriends(query)
 	case "playWithRandomOpponent":
@@ -37,23 +37,23 @@ func (bot *Bot) handleCallbackQuery(query *tgbotapi.CallbackQuery) {
 	case "gameOver":
 		bot.api.Request(tgbotapi.NewCallback(query.ID, "Game is over!"))
 	default:
-		match, _ := regexp.MatchString(`^\d+_\d+$`, data)
+		match, _ := regexp.MatchString(`^\d+_\d+$`, query.Data)
 		switch {
 		case match:
 			bot.placeDisk(query)
-		case strings.HasPrefix(data, "replay"):
+		case strings.HasPrefix(query.Data, "replay"):
 			text := ""
 			if err := bot.sendGameReplay(query.From, query.Data); err != nil {
 				text = err.Error()
 			}
 			bot.api.Request(tgbotapi.NewCallbackWithAlert(query.ID, text))
-		case strings.HasPrefix(data, "profile"):
+		case strings.HasPrefix(query.Data, "profile"):
 			bot.alertProfile(query)
-		case strings.HasPrefix(data, "rematch"):
+		case strings.HasPrefix(query.Data, "rematch"):
 			bot.handleRematch(query)
-		case strings.HasPrefix(data, "accept"):
+		case strings.HasPrefix(query.Data, "accept"):
 			bot.handleAcceptedRematch(query)
-		case strings.HasPrefix(data, "reject"):
+		case strings.HasPrefix(query.Data, "reject"):
 			bot.handleRejectedRematch(query)
 		}
 	}
@@ -539,11 +539,9 @@ func (bot *Bot) handleRematch(query *tgbotapi.CallbackQuery) {
 	var gameID string
 	fmt.Sscanf(query.Data, "rematch%d&%d:%s", &user1ID, &user2ID, &gameID)
 
-	var otherUserID int64
+	otherUserID := user1ID
 	if query.From.ID == user1ID {
 		otherUserID = user2ID
-	} else {
-		otherUserID = user1ID
 	}
 
 	bot.userIDToUserMutex.Lock()

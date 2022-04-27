@@ -47,7 +47,7 @@ type Handler struct {
 func New(uri string) *Handler {
 	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(uri))
 	if err != nil {
-		log.Fatalln(err)
+		log.Panicln(err)
 	}
 	coll := client.Database("othello_bot").Collection("players")
 
@@ -84,11 +84,11 @@ func (db *Handler) GetAllPlayers() []PlayerDoc {
 	cur, err := db.coll.Find(context.TODO(), bson.D{})
 	handleErr(err)
 	res := make([]PlayerDoc, 0)
+	var doc PlayerDoc
 	for cur.Next(context.TODO()) {
-		var doc PlayerDoc
 		err := cur.Decode(&doc)
 		if err != nil {
-			log.Fatalln(err)
+			log.Panicln(err)
 		}
 		res = append(res, doc)
 	}

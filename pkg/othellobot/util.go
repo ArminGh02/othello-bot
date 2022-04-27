@@ -140,11 +140,9 @@ func buildGameKeyboard(
 		button1 = tgbotapi.NewInlineKeyboardButtonData("💬 Chat", "chat")
 	}
 
-	var button2text string
+	button2text := "Show legal moves"
 	if showLegalMoves {
 		button2text = "Hide legal moves"
-	} else {
-		button2text = "Show legal moves"
 	}
 
 	row2 := tgbotapi.NewInlineKeyboardRow(
@@ -207,7 +205,9 @@ func buildGameOverKeyboard(
 		button1 = tgbotapi.NewInlineKeyboardButtonData("🔄 Rematch", rematchData)
 		button2 = tgbotapi.NewInlineKeyboardButtonData("🎞 Game replay", button2data)
 	}
+
 	row := tgbotapi.NewInlineKeyboardRow(button1, button2)
+
 	return &tgbotapi.InlineKeyboardMarkup{
 		InlineKeyboard: append(game.EndInlineKeyboard(), buildProfilesRow(game), row),
 	}

@@ -156,11 +156,9 @@ func (game *Game) InlineKeyboard(showLegalMoves bool) [][]tgbotapi.InlineKeyboar
 	for y := range game.board {
 		keyboard[y] = make([]tgbotapi.InlineKeyboardButton, len(game.board[y]))
 		for x, cell := range game.board[y] {
-			var buttonText string
+			buttonText := cell.Emoji()
 			if showLegalMoves && game.placeableCoords.Contains(coord.New(x, y)) {
 				buttonText = consts.LegalMoveEmoji
-			} else {
-				buttonText = cell.Emoji()
 			}
 
 			keyboard[y][x] = tgbotapi.NewInlineKeyboardButtonData(

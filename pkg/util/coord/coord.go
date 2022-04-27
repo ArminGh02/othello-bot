@@ -13,12 +13,11 @@ func New(x, y int) Coord {
 }
 
 func Plus(a, b Coord) Coord {
-	return Coord{
-		X: a.X + b.X,
-		Y: a.Y + b.Y,
-	}
+	a.Plus(b)
+	return a
 }
 
 func (c *Coord) Plus(other Coord) {
-	*c = Plus(*c, other)
+	c.X += other.X
+	c.Y += other.Y
 }
