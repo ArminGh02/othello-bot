@@ -1,7 +1,6 @@
 package cell
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/ArminGh02/othello-bot/pkg/consts"
