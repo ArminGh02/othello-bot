@@ -24,8 +24,10 @@ const (
 )
 
 var (
-	whiteDisk  = readPNG("resources/white-disk.png")
-	blackDisk  = readPNG("resources/black-disk.png")
+	cellToImage = map[cell.Cell]image.Image{
+		cell.White: readPNG("resources/white-disk.png"),
+		cell.Black: readPNG("resources/black-disk.png"),
+	}
 	boardImage = imageToPaletted(readPNG("resources/board.png"))
 )
 
@@ -60,13 +62,6 @@ func getGameFrames(movesSequence []coord.Coord, whiteStarts bool) []*image.Palet
 }
 
 func getGameFrame(game *othellogame.Game) *image.Paletted {
-	getDiskImage := func(white bool) image.Image {
-		if white {
-			return whiteDisk
-		}
-		return blackDisk
-	}
-
 	res := cloneImage(boardImage)
 	board := game.Board()
 	for i := range board {
@@ -80,7 +75,7 @@ func getGameFrame(game *othellogame.Game) *image.Paletted {
 			draw.Draw(
 				res,
 				image.Rect(x, y, x+diskLength, y+diskLength),
-				getDiskImage(board[i][j] == cell.White),
+				cellToImage[board[i][j]],
 				image.Point{},
 				draw.Over,
 			)
