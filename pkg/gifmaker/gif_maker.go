@@ -13,16 +13,6 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-const (
-	x0 = 77
-	y0 = 121
-)
-
-const (
-	diskLength = 39
-	cellLength = 44
-)
-
 var (
 	cellToImage = map[cell.Cell]image.Image{
 		cell.White: readPNG("resources/white-disk.png"),
@@ -63,6 +53,15 @@ func getGameFrames(movesSequence []coord.Coord, whiteStarts bool) []*image.Palet
 }
 
 func getGameFrame(game *othellogame.Game) *image.Paletted {
+	const (
+		x0 = 77
+		y0 = 121
+	)
+	const (
+		diskLength = 39
+		cellLength = 44
+	)
+
 	res := cloneImage(boardImage)
 	board := game.Board()
 	for i := range board {
