@@ -74,6 +74,7 @@ func NewScoreboard(players []database.PlayerDoc) Scoreboard {
 
 func (s *Scoreboard) Insert(player *database.PlayerDoc) {
 	s.mu.Lock()
+	defer s.mu.Unlock()
 
 	score := player.Score()
 	i := len(s.scoreboard)
@@ -87,12 +88,11 @@ func (s *Scoreboard) Insert(player *database.PlayerDoc) {
 		s.scoreboard = append(s.scoreboard[:i+1], s.scoreboard[i:]...)
 		s.scoreboard[i] = *player
 	}
-
-	s.mu.Unlock()
 }
 
 func (s *Scoreboard) UpdateRankOf(userID int64, winsDelta, lossesDelta int) {
 	s.mu.Lock()
+	defer s.mu.Unlock()
 
 	i := s.indexOf(userID)
 	player := &s.scoreboard[i]
@@ -109,8 +109,6 @@ func (s *Scoreboard) UpdateRankOf(userID int64, winsDelta, lossesDelta int) {
 	for ; i+1 < len(s.scoreboard) && score < s.scoreboard[i+1].Score(); i++ {
 		s.scoreboard[i], s.scoreboard[i+1] = s.scoreboard[i+1], s.scoreboard[i]
 	}
-
-	s.mu.Unlock()
 }
 
 func (s *Scoreboard) indexOf(userID int64) int {
