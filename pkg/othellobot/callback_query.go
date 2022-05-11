@@ -195,11 +195,12 @@ func (bot *Bot) cleanUp(game *othellogame.Game, query *tgbotapi.CallbackQuery) {
 func (bot *Bot) startGameOfFriends(query *tgbotapi.CallbackQuery) {
 	bot.inlineMessageIDToUserMutex.Lock()
 	user1, ok := bot.inlineMessageIDToUser[query.InlineMessageID]
+	bot.inlineMessageIDToUserMutex.Unlock()
+
 	if !ok {
 		bot.api.Request(tgbotapi.NewCallbackWithAlert(query.ID, "Invitation is too old!"))
 		return
 	}
-	bot.inlineMessageIDToUserMutex.Unlock()
 
 	user2 := query.From
 
