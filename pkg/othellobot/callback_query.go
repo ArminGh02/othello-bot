@@ -530,6 +530,8 @@ func (bot *Bot) startChatBetweenOpponents(query *tgbotapi.CallbackQuery) {
 	)
 	bot.api.Send(msg)
 
+	bot.api.Request(tgbotapi.CallbackConfig{CallbackQueryID: query.ID})
+
 	bot.userIDToChatBuddyMutex.Lock()
 	bot.userIDToChatBuddy[user1.ID] = user2
 	bot.userIDToChatBuddyMutex.Unlock()
