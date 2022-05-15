@@ -416,6 +416,7 @@ func (bot *Bot) handleSurrender(query *tgbotapi.CallbackQuery) {
 	game, ok := bot.userIDToCurrentGame[loser.ID]
 	if !ok {
 		bot.api.Request(tgbotapi.NewCallbackWithAlert(query.ID, errTooOldGame.Error()))
+		bot.userIDToCurrentGameMutex.Unlock()
 		return
 	}
 
