@@ -14,7 +14,7 @@ import (
 func main() {
 	loc, err := time.LoadLocation("Asia/Tehran")
 	if err != nil {
-		log.Fatalln("Error loading location: " + err.Error())
+		log.Fatalln("Error loading location:", err)
 	}
 
 	log.SetFlags(0)
@@ -22,7 +22,7 @@ func main() {
 
 	err = godotenv.Load()
 	if err != nil {
-		log.Fatalln("Error loading .env file: " + err.Error())
+		log.Fatalln("Error loading .env file:", err)
 	}
 
 	token := os.Getenv("OTHELLO_TOKEN")
